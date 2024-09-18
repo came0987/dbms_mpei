@@ -22,7 +22,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.setModel(self.create_model(table_name="grntirub"))
         # self.ui.db_tables.setCurrentIndex(0)
         # self.ui.vuz_table.show()
-        self.ui.tables_combobox.view().pressed.connect(self.set_current_table)
+        self.ui.tables_combobox.activated.connect(self.set_current_table)
         # self.set_current_table()
 
 
@@ -46,12 +46,12 @@ class ExponatDBMS(QMainWindow):
         # self.ui.db_tables.show()
 
     def set_current_table(self, index):
-        item = self.ui.tables_combobox.model().itemFromIndex(index)
-        if item.text() == "ГРНТИ":
+        text = self.ui.tables_combobox.currentText()
+        if text == "ГРНТИ":
             self.ui.db_tables.setCurrentIndex(2)
-        if item.text() == "Выставки":
+        if text == "Выставки":
             self.ui.db_tables.setCurrentIndex(0)
-        if item.text() == "ВУЗы":
+        if text == "ВУЗы":
             self.ui.db_tables.setCurrentIndex(1)
 
 
