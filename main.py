@@ -59,10 +59,10 @@
 #     window = ExponatDBMS()
 #     window.show()
 #     sys.exit(app.exec())
-
+#
 import sys
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
+from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 from connection import Data
 from ui_main_side import Ui_MainWindow
@@ -103,15 +103,15 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.setSortingEnabled(False)
 
         # Настройка заголовков
-        self.set_custom_headers("vyst_mo_table", ["код вуза/организации", "краткое название вуза/организации",
-                                                  "признак  формы НИР", "регистрационный номер НИР", "наименование проекта/НИР",
-                                                  "коды  ГРНТИ", "руководитель НИР", "должность, ученое звание, ученая степень руководителя",
-                                                  "признак", "выставки", "название выставочного экспоната"])
+        self.set_custom_headers("vyst_mo_table", ["Код ВУЗа/организации", "Краткое название ВУЗа/организации",
+                                                  "Признак  формы НИР", "Регистрационный номер НИР", "Наименование проекта/НИР",
+                                                  "Коды  ГРНТИ", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
+                                                  "Признак", "Выставки", "Название выставочного экспоната"])
 
-        self.set_custom_headers("vuz_table", ["Название ВУЗа", "код вуза", "сокращенное наименование",
-                                              "статус", 'город', 'федеральный округ'])
+        self.set_custom_headers("vuz_table", ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокращенное наименование",
+                                               "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"])
 
-        self.set_custom_headers("grntirub_table", ["Код", "наименование рубрики", "код рубрики"])
+        self.set_custom_headers("grntirub_table", ["Код рубрики", "Наименование рубрики"])
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
@@ -128,6 +128,8 @@ class ExponatDBMS(QMainWindow):
         for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table]:
             header = table.horizontalHeader()
             header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+            # Устанавливаем автоматическое изменение ширины столбцов
+            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
     def create_model(self, table_name: str):
         model = NonEditableSqlTableModel(self)
@@ -185,3 +187,4 @@ if __name__ == '__main__':
     window = ExponatDBMS()
     window.show()
     sys.exit(app.exec())
+
