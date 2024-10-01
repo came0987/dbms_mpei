@@ -25,7 +25,7 @@
 #         # self.ui.vuz_table.show()
 #         self.ui.tables_combobox.activated.connect(self.set_current_table)
 #         # self.set_current_table()
-
+import enum
 #
 #     def create_model(self, table_name: str):
 #         model = QSqlTableModel(self)
@@ -67,6 +67,10 @@ from PySide6.QtSql import QSqlTableModel
 from connection import Data
 from ui_main_side import Ui_MainWindow
 
+class Tables(enum.Enum):
+    vyst_mo_table = "vyst_mo"
+    vuz_table = "VUZ"
+    grntirub_table = "grntirub"
 
 class ExponatDBMS(QMainWindow):
     def __init__(self):
@@ -82,104 +86,97 @@ class ExponatDBMS(QMainWindow):
             "grntirub_table": {}
         }
 
-        self.init_tables()
         self.ui.tables_combobox.activated.connect(self.set_current_table)
 
-    def init_tables(self):
-        self.models = {
-            "vyst_mo_table": self.create_model("vyst_mo"),
-            "vuz_table": self.create_model("VUZ"),
-            "grntirub_table": self.create_model("grntirub")
-        }
-
-        # Устанавливаем модели и заголовки
-        self.ui.vyst_mo_table.setModel(self.models["vyst_mo_table"])
-        self.ui.vuz_table.setModel(self.models["vuz_table"])
-        self.ui.grntirub_table.setModel(self.models["grntirub_table"])
-
-        # Отключаем сортировку по заголовкам при первом выводе
-        self.ui.vyst_mo_table.setSortingEnabled(False)
-        self.ui.vuz_table.setSortingEnabled(False)
-        self.ui.grntirub_table.setSortingEnabled(False)
-
-        # Настройка заголовков
-        self.set_custom_headers("vyst_mo_table", ["Код ВУЗа/организации", "Краткое название ВУЗа/организации",
-                                                  "Признак  формы НИР", "Регистрационный номер НИР", "Наименование проекта/НИР",
-                                                  "Коды  ГРНТИ", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
-                                                  "Признак", "Выставки", "Название выставочного экспоната"])
-
-        self.set_custom_headers("vuz_table", ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокращенное наименование",
-                                               "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"])
-
-        self.set_custom_headers("grntirub_table", ["Код рубрики", "Наименование рубрики"])
-
-        # Подключаем сортировку для каждой таблицы
-        self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
-            lambda index: self.handle_header_click(self.ui.vyst_mo_table, index)
-        )
-        self.ui.vuz_table.horizontalHeader().sectionClicked.connect(
-            lambda index: self.handle_header_click(self.ui.vuz_table, index)
-        )
-        self.ui.grntirub_table.horizontalHeader().sectionClicked.connect(
-            lambda index: self.handle_header_click(self.ui.grntirub_table, index)
-        )
-
-        # Устанавливаем режим растягивания заголовков
-        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table]:
-            header = table.horizontalHeader()
-            header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-            # Устанавливаем автоматическое изменение ширины столбцов
-            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-
-    def create_model(self, table_name: str):
-        model = NonEditableSqlTableModel(self)
-        model.setEditStrategy(QSqlTableModel.OnManualSubmit)
-        model.setTable(table_name)
-        model.select()
-        return model
-
-    def set_custom_headers(self, table_name, headers):
-        model = self.models[table_name]
-        for index, header in enumerate(headers):
-            model.setHeaderData(index, Qt.Horizontal, header)
+    # def init_tables(self):
+    #     self.models = {
+    #         "vyst_mo_table": self.create_model("vyst_mo"),
+    #         "vuz_table": self.create_model("VUZ"),
+    #         "grntirub_table": self.create_model("grntirub")
+    #     }
+    #
+    #     # Устанавливаем модели и заголовки
+    #     self.ui.vyst_mo_table.setModel(self.models["vyst_mo_table"])
+    #     self.ui.vuz_table.setModel(self.models["vuz_table"])
+    #     self.ui.grntirub_table.setModel(self.models["grntirub_table"])
+    #
+    #     # Отключаем сортировку по заголовкам при первом выводе
+    #     self.ui.vyst_mo_table.setSortingEnabled(False)
+    #     self.ui.vuz_table.setSortingEnabled(False)
+    #     self.ui.grntirub_table.setSortingEnabled(False)
+    #
+    #     # Настройка заголовков
+    #     self.set_custom_headers("vyst_mo_table", ["Код ВУЗа/организации", "Краткое название ВУЗа/организации",
+    #                                               "Признак  формы НИР", "Регистрационный номер НИР", "Наименование проекта/НИР",
+    #                                               "Коды  ГРНТИ", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
+    #                                               "Признак", "Выставки", "Название выставочного экспоната"])
+    #
+    #     self.set_custom_headers("vuz_table", ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокращенное наименование",
+    #                                            "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"])
+    #
+    #     self.set_custom_headers("grntirub_table", ["Код рубрики", "Наименование рубрики"])
+    #
+    #     # Подключаем сортировку для каждой таблицы
+    #     self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(self.handle_header_click)
+    #     self.ui.vuz_table.horizontalHeader().sectionClicked.connect(self.handle_header_click)
+    #     self.ui.grntirub_table.horizontalHeader().sectionClicked.connect(self.handle_header_click)
+    #
+    #     # Устанавливаем режим растягивания заголовков
+    #     for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table]:
+    #         header = table.horizontalHeader()
+    #         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+    #         # Устанавливаем автоматическое изменение ширины столбцов
+    #         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+    #
+    # def create_model(self, table_name: str):
+    #     model = NonEditableSqlTableModel(self)
+    #     model.setEditStrategy(QSqlTableModel.OnManualSubmit)
+    #     model.setTable(table_name)
+    #     model.select()
+    #     return model
+    #
+    # def set_custom_headers(self, table_name, headers):
+    #     model = self.models[table_name]
+    #     for index, header in enumerate(headers):
+    #         model.setHeaderData(index, Qt.Horizontal, header)
 
     def set_current_table(self):
-        # Меняем текущую таблицу в зависимости от выбора в ComboBox
         text = self.ui.tables_combobox.currentText()
-        if text == "ГРНТИ":
-            self.ui.db_tables.setCurrentIndex(2)
-        elif text == "Выставки":
-            self.ui.db_tables.setCurrentIndex(0)
-        elif text == "ВУЗы":
-            self.ui.db_tables.setCurrentIndex(1)
+        table_mapping = {
+            "Выставки": 0,
+            "ВУЗы": 1,
+            "ГРНТИ": 2
+        }
+        self.ui.db_tables.setCurrentIndex(table_mapping.get(text))
 
-    def handle_header_click(self, table, logicalIndex):
-        # Получаем имя таблицы для правильного отслеживания состояния
-        table_name = table.objectName()
-
-        # Получаем текущее состояние сортировки для выбранного столбца
-        current_sort_order = self.sort_states[table_name].get(logicalIndex, None)
-
-        # Устанавливаем модель, связанную с таблицей
-        model = table.model()
-
-        # Устанавливаем следующее состояние сортировки
-        if current_sort_order is None:
-            model.sort(logicalIndex, Qt.AscendingOrder)
-            self.sort_states[table_name][logicalIndex] = Qt.AscendingOrder
-        elif current_sort_order == Qt.AscendingOrder:
-            model.sort(logicalIndex, Qt.DescendingOrder)
-            self.sort_states[table_name][logicalIndex] = Qt.DescendingOrder
-        else:
-            model.setSort(-1, Qt.AscendingOrder)  # Сбрасываем сортировку
-            model.select()  # Перезагружаем данные в исходном порядке
-            self.sort_states[table_name][logicalIndex] = None
-
-
-class NonEditableSqlTableModel(QSqlTableModel):
-    # Переопределение метода для запрета редактирования ячеек
-    def flags(self, index):
-        return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+#     def handle_header_click(self, logicalIndex):
+#         # Получаем имя таблицы для правильного отслеживания состояния
+#         print(self)
+#         table_name = table.objectName()
+#
+#         # Получаем текущее состояние сортировки для выбранного столбца
+#         current_sort_order = self.sort_states[table_name].get(logicalIndex, None)
+#
+#         # Устанавливаем модель, связанную с таблицей
+#         model = table.model()
+#
+#         # Устанавливаем следующее состояние сортировки
+#         if current_sort_order is None:
+#             model.sort(logicalIndex, Qt.AscendingOrder)
+#             self.sort_states[table_name][logicalIndex] = Qt.AscendingOrder
+#         elif current_sort_order == Qt.AscendingOrder:
+#             model.sort(logicalIndex, Qt.DescendingOrder)
+#             self.sort_states[table_name][logicalIndex] = Qt.DescendingOrder
+#         else:
+#             model.setSort(-1, Qt.AscendingOrder)  # Сбрасываем сортировку
+#             model.select()  # Перезагружаем данные в исходном порядке
+#             self.sort_states[table_name][logicalIndex] = None
+#
+#
+# class NonEditableSqlTableModel(QSqlTableModel):
+#     # Переопределение метода для запрета редактирования ячеек
+#     def flags(self, index):
+#         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
 
 if __name__ == '__main__':
@@ -187,4 +184,3 @@ if __name__ == '__main__':
     window = ExponatDBMS()
     window.show()
     sys.exit(app.exec())
-
