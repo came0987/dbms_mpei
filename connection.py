@@ -8,7 +8,7 @@ class Data:
 
     def create_connection(self):
         db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-        db.setDatabaseName('dbms.db')
+        db.setDatabaseName('data_base.db')
 
         if not db.open():
             QtWidgets.QMessageBox.critical(None, "Cannot open database",
