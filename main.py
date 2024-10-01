@@ -1,65 +1,3 @@
-# import sys
-#
-# from PySide6 import QtWidgets
-# from PySide6.QtCore import Qt
-# from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView
-# from PySide6.QtSql import QSqlTableModel
-# from PySide6.QtGui import QStandardItemModel, QStandardItem
-#
-# from connection import Data
-# from ui_main_side import Ui_MainWindow
-#
-#
-# class ExponatDBMS(QMainWindow):
-#     def __init__(self):
-#         super(ExponatDBMS, self).__init__()
-#         self.ui = Ui_MainWindow()
-#         self.ui.setupUi(self)
-#         self.connection = Data()
-#
-#
-#         self.ui.vyst_mo_table.setModel(self.create_model(table_name="vyst_mo"))
-#         self.ui.vuz_table.setModel(self.create_model(table_name="VUZ"))
-#         self.ui.grntirub_table.setModel(self.create_model(table_name="grntirub"))
-#         # self.ui.db_tables.setCurrentIndex(0)
-#         # self.ui.vuz_table.show()
-#         self.ui.tables_combobox.activated.connect(self.set_current_table)
-#         # self.set_current_table()
-
-#
-#     def create_model(self, table_name: str):
-#         model = QSqlTableModel(self)
-#         model.setEditStrategy(QSqlTableModel.EditStrategy.OnManualSubmit)
-#         model.setTable(table_name)
-#         model.select()
-#         return model
-#         # self.model = QStandardItemModel(self)
-#         # self.model.setHorizontalHeaderLabels()
-#         # self.model.setHeaderData(0, Qt.Orientation.Horizontal, "Name")
-#         # self.model.setHorizontalHeaderLabels()
-#         # self.ui.vyst_mo_table.setModel(self.model) #TODO оформить все выше в метод и передавать в параметры
-#         # header = QHeaderView(Qt.Orientation.Horizontal).headerDataChanged()
-#         # self.ui.vyst_mo_table.setHorizontalHeader()
-#         # self.ui.db_tables.setCurrentWidget(self.ui.vyst_mo)
-#         # self.ui.vyst_mo_table.show()
-#         # self.setCentralWidget(self.ui.vyst_mo_table)
-#         # self.ui.db_tables.show()
-#
-#     def set_current_table(self, index):
-#         text = self.ui.tables_combobox.currentText()
-#         if text == "ГРНТИ":
-#             self.ui.db_tables.setCurrentIndex(2)
-#         if text == "Выставки":
-#             self.ui.db_tables.setCurrentIndex(0)
-#         if text == "ВУЗы":
-#             self.ui.db_tables.setCurrentIndex(1)
-#
-# if __name__ == '__main__':
-#     app = QApplication(sys.argv)
-#     window = ExponatDBMS()
-#     window.show()
-#     sys.exit(app.exec())
-#
 import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView, QTableView
@@ -83,7 +21,11 @@ class ExponatDBMS(QMainWindow):
         }
 
         self.init_tables()
-        self.ui.tables_combobox.activated.connect(self.set_current_table)
+        self.ui.tables.triggered.connect(self.set_current_table)
+        # self.ui.grnti.triggered.connect(self.set_current_table)
+        # self.ui.vistavki.triggered.connect(self.set_current_table)
+        # self.ui.vuz_2.triggered.connect(self.set_current_table)
+        # self.ui.tables_combobox.activated.connect(self.set_current_table)
 
     def init_tables(self):
         self.models = {
@@ -103,7 +45,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.setSortingEnabled(False)
 
         # Настройка заголовков
-        self.set_custom_headers("vyst_mo_table", ["Код ВУЗа/организации", "Краткое название ВУЗа/организации",
+        self.set_custom_headers("vyst_mo_table", ["Код ВУЗа/организации",
                                                   "Признак  формы НИР", "Регистрационный номер НИР", "Наименование проекта/НИР",
                                                   "Коды  ГРНТИ", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
                                                   "Признак", "Выставки", "Название выставочного экспоната"])
@@ -143,9 +85,9 @@ class ExponatDBMS(QMainWindow):
         for index, header in enumerate(headers):
             model.setHeaderData(index, Qt.Horizontal, header)
 
-    def set_current_table(self):
+    def set_current_table(self, checked_action):
         # Меняем текущую таблицу в зависимости от выбора в ComboBox
-        text = self.ui.tables_combobox.currentText()
+        text = checked_action.text()
         if text == "ГРНТИ":
             self.ui.db_tables.setCurrentIndex(2)
         elif text == "Выставки":
