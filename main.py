@@ -1,4 +1,6 @@
 import sys
+
+import PySide6.QtWidgets
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
@@ -22,10 +24,15 @@ class ExponatDBMS(QMainWindow):
 
         self.init_tables()
         self.ui.tables.triggered.connect(self.set_current_table)
+        self.ui.create_btn.clicked.connect(self.open_create_dialog)
+
         # self.ui.grnti.triggered.connect(self.set_current_table)
         # self.ui.vistavki.triggered.connect(self.set_current_table)
         # self.ui.vuz_2.triggered.connect(self.set_current_table)
         # self.ui.tables_combobox.activated.connect(self.set_current_table)
+
+    def open_create_dialog(self):
+        self.create_dialog = PySide6.QtWidgets.QDialog()
 
     def init_tables(self):
         self.models = {

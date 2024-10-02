@@ -90,23 +90,29 @@ class Ui_MainWindow(object):
         self.modify_table_cb = QComboBox(self.centralwidget)
         self.modify_table_cb.setObjectName(u"modify_table_cb")
         self.modify_table_cb.setGeometry(QRect(1050, 50, 131, 31))
-        self.widget = QWidget(self.centralwidget)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(190, 630, 801, 41))
-        self.crud_menu = QHBoxLayout(self.widget)
+        self.layoutWidget = QWidget(self.centralwidget)
+        self.layoutWidget.setObjectName(u"layoutWidget")
+        self.layoutWidget.setGeometry(QRect(190, 630, 801, 41))
+        self.crud_menu = QHBoxLayout(self.layoutWidget)
         self.crud_menu.setObjectName(u"crud_menu")
         self.crud_menu.setContentsMargins(0, 0, 0, 0)
-        self.create_btn = QPushButton(self.widget)
+        self.create_btn = QPushButton(self.layoutWidget)
         self.create_btn.setObjectName(u"create_btn")
 
         self.crud_menu.addWidget(self.create_btn)
 
-        self.update_btn = QPushButton(self.widget)
+        self.update_btn = QPushButton(self.layoutWidget)
         self.update_btn.setObjectName(u"update_btn")
 
         self.crud_menu.addWidget(self.update_btn)
 
-        self.delete_btn = QPushButton(self.widget)
+        self.comboBox = QComboBox(self.layoutWidget)
+        self.comboBox.addItem("")
+        self.comboBox.setObjectName(u"comboBox")
+
+        self.crud_menu.addWidget(self.comboBox)
+
+        self.delete_btn = QPushButton(self.layoutWidget)
         self.delete_btn.setObjectName(u"delete_btn")
 
         self.crud_menu.addWidget(self.delete_btn)
@@ -119,7 +125,7 @@ class Ui_MainWindow(object):
         self.tables.setObjectName(u"tables")
         self.groups = QMenu(self.menuBar)
         self.groups.setObjectName(u"groups")
-        self.groups.setGeometry(QRect(332, 99, 182, 50))
+        self.groups.setGeometry(QRect(345, 125, 182, 50))
         self.help = QMenu(self.menuBar)
         self.help.setObjectName(u"help")
         MainWindow.setMenuBar(self.menuBar)
@@ -140,12 +146,15 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0430 \u0434\u0430\u043d\u043d\u044b\u0445 \u043e \u0432\u044b\u0441\u0442\u0430\u0432\u043e\u0447\u043d\u044b\u0445 \u044d\u043a\u0441\u043f\u043e\u043d\u0430\u0442\u0430\u0445.", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u043a\u0430 \u0434\u0430\u043d\u043d\u044b\u0445 \u043e \u0432\u044b\u0441\u0442\u0430\u0432\u043e\u0447\u043d\u044b\u0445 \u044d\u043a\u0441\u043f\u043e\u043d\u0430\u0442\u0430\u0445", None))
         self.vistavki.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0441\u0442\u0430\u0432\u043a\u0438", None))
         self.grnti.setText(QCoreApplication.translate("MainWindow", u"\u0413\u0420\u041d\u0422\u0418", None))
         self.vuz_2.setText(QCoreApplication.translate("MainWindow", u"\u0412\u0423\u0417\u044b", None))
         self.create_btn.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.update_btn.setText(QCoreApplication.translate("MainWindow", u"\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
+        self.comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"+ \u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0433\u0440\u0443\u043f\u043f\u0443", None))
+
+        self.comboBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c \u0432 \u0433\u0440\u0443\u043f\u043f\u0443", None))
         self.delete_btn.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.tables.setTitle(QCoreApplication.translate("MainWindow", u"\u0422\u0430\u0431\u043b\u0438\u0446\u044b", None))
         self.groups.setTitle(QCoreApplication.translate("MainWindow", u"\u0413\u0440\u0443\u043f\u043f\u044b", None))
