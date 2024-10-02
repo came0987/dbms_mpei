@@ -38,30 +38,63 @@
    <enum>QTabWidget::TabShape::Rounded</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QStackedWidget" name="tables_area">
+   <widget class="QStackedWidget" name="pages_">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>95</y>
-      <width>1160</width>
-      <height>530</height>
+      <x>0</x>
+      <y>0</y>
+      <width>1200</width>
+      <height>678</height>
      </rect>
     </property>
     <property name="currentIndex">
      <number>0</number>
     </property>
-    <widget class="QWidget" name="tables_page">
-     <widget class="QStackedWidget" name="db_tables">
+    <widget class="QWidget" name="menu_tables_page">
+     <widget class="QComboBox" name="add_filters_cb">
       <property name="geometry">
        <rect>
-        <x>0</x>
-        <y>0</y>
+        <x>220</x>
+        <y>20</y>
+        <width>141</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPlainTextEdit" name="search_field">
+      <property name="geometry">
+       <rect>
+        <x>40</x>
+        <y>20</y>
+        <width>161</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="modify_table_cb">
+      <property name="geometry">
+       <rect>
+        <x>1050</x>
+        <y>20</y>
+        <width>131</width>
+        <height>31</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QStackedWidget" name="tables_area">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>80</y>
         <width>1160</width>
         <height>530</height>
        </rect>
       </property>
-      <widget class="QWidget" name="vyst_mo">
-       <widget class="QTableView" name="vyst_mo_table">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="tables_page">
+       <widget class="QStackedWidget" name="db_tables">
         <property name="geometry">
          <rect>
           <x>0</x>
@@ -70,28 +103,52 @@
           <height>530</height>
          </rect>
         </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+        <widget class="QWidget" name="vyst_mo">
+         <widget class="QTableView" name="vyst_mo_table">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>1160</width>
+            <height>530</height>
+           </rect>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="vuz">
+         <widget class="QTableView" name="vuz_table">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>1160</width>
+            <height>530</height>
+           </rect>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="grntirub">
+         <widget class="QTableView" name="grntirub_table">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>1160</width>
+            <height>530</height>
+           </rect>
+          </property>
+         </widget>
+        </widget>
        </widget>
       </widget>
-      <widget class="QWidget" name="vuz">
-       <widget class="QTableView" name="vuz_table">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>1160</width>
-          <height>530</height>
-         </rect>
-        </property>
-       </widget>
-      </widget>
-      <widget class="QWidget" name="grntirub">
-       <widget class="QTableView" name="grntirub_table">
+      <widget class="QWidget" name="group_page">
+       <widget class="QTableWidget" name="group_table">
         <property name="geometry">
          <rect>
           <x>0</x>
@@ -103,94 +160,153 @@
        </widget>
       </widget>
      </widget>
-    </widget>
-    <widget class="QWidget" name="group_page">
-     <widget class="QTableWidget" name="group_table">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>1160</width>
-        <height>530</height>
+        <x>190</x>
+        <y>620</y>
+        <width>801</width>
+        <height>41</height>
        </rect>
       </property>
-     </widget>
-    </widget>
-   </widget>
-   <widget class="QPlainTextEdit" name="search_field">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>40</y>
-      <width>161</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="add_filters_cb">
-    <property name="geometry">
-     <rect>
-      <x>200</x>
-      <y>40</y>
-      <width>141</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="modify_table_cb">
-    <property name="geometry">
-     <rect>
-      <x>1050</x>
-      <y>50</y>
-      <width>131</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QWidget" name="layoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>190</x>
-      <y>630</y>
-      <width>801</width>
-      <height>41</height>
-     </rect>
-    </property>
-    <layout class="QHBoxLayout" name="crud_menu">
-     <item>
-      <widget class="QPushButton" name="create_btn">
-       <property name="text">
-        <string>Добавить запись</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="update_btn">
-       <property name="text">
-        <string>Редактировать запись</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="comboBox">
-       <property name="placeholderText">
-        <string>Добавить запись в группу</string>
-       </property>
+      <layout class="QHBoxLayout" name="crud_menu">
        <item>
-        <property name="text">
-         <string>+ Создать новую группу</string>
-        </property>
+        <widget class="QPushButton" name="create_btn">
+         <property name="text">
+          <string>Добавить запись</string>
+         </property>
+        </widget>
        </item>
+       <item>
+        <widget class="QPushButton" name="update_btn">
+         <property name="text">
+          <string>Редактировать запись</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QComboBox" name="comboBox">
+         <property name="placeholderText">
+          <string>Добавить запись в группу</string>
+         </property>
+         <item>
+          <property name="text">
+           <string>+ Создать новую группу</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="delete_btn">
+         <property name="text">
+          <string>Удалить запись</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="filter_container" native="true">
+      <property name="geometry">
+       <rect>
+        <x>380</x>
+        <y>10</y>
+        <width>661</width>
+        <height>61</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="menu_groups_page">
+     <widget class="QStackedWidget" name="groups_pages">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>80</y>
+        <width>1160</width>
+        <height>530</height>
+       </rect>
+      </property>
+      <widget class="QWidget" name="group_1">
+       <widget class="QTableView" name="tableView">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1160</width>
+          <height>530</height>
+         </rect>
+        </property>
+       </widget>
       </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="delete_btn">
-       <property name="text">
-        <string>Удалить запись</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+      <widget class="QWidget" name="group_2"/>
+     </widget>
+     <widget class="QPushButton" name="pushButton_2">
+      <property name="geometry">
+       <rect>
+        <x>1070</x>
+        <y>30</y>
+        <width>111</width>
+        <height>31</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Экспорт</string>
+      </property>
+     </widget>
+     <widget class="QWidget" name="">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>30</y>
+        <width>421</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QComboBox" name="comboBox_2">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="placeholderText">
+          <string>Выбрать группу</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Создать группу</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_3">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Удалить группу</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
