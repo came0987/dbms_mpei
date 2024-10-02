@@ -102,6 +102,18 @@
         </property>
        </widget>
       </widget>
+      <widget class="QWidget" name="obshsvd">
+       <widget class="QTableView" name="obshsvd_table">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1160</width>
+          <height>530</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
      </widget>
     </widget>
     <widget class="QWidget" name="group_page">
@@ -147,7 +159,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>190</x>
@@ -197,13 +209,14 @@
     <addaction name="vistavki"/>
     <addaction name="grnti"/>
     <addaction name="vuz_2"/>
+    <addaction name="Obshaya_cvodka"/>
    </widget>
    <widget class="QMenu" name="groups">
     <property name="geometry">
      <rect>
-      <x>332</x>
-      <y>99</y>
-      <width>182</width>
+      <x>396</x>
+      <y>125</y>
+      <width>134</width>
       <height>50</height>
      </rect>
     </property>
@@ -233,6 +246,11 @@
   <action name="vuz_2">
    <property name="text">
     <string>ВУЗы</string>
+   </property>
+  </action>
+  <action name="Obshaya_cvodka">
+   <property name="text">
+    <string>Общая сводка</string>
    </property>
   </action>
  </widget>

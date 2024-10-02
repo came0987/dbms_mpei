@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_main.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -41,6 +41,8 @@ class Ui_MainWindow(object):
         self.grnti.setObjectName(u"grnti")
         self.vuz_2 = QAction(MainWindow)
         self.vuz_2.setObjectName(u"vuz_2")
+        self.Obshaya_cvodka = QAction(MainWindow)
+        self.Obshaya_cvodka.setObjectName(u"Obshaya_cvodka")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.tables_area = QStackedWidget(self.centralwidget)
@@ -74,6 +76,12 @@ class Ui_MainWindow(object):
         self.grntirub_table.setObjectName(u"grntirub_table")
         self.grntirub_table.setGeometry(QRect(0, 0, 1160, 530))
         self.db_tables.addWidget(self.grntirub)
+        self.obshsvd = QWidget()
+        self.obshsvd.setObjectName(u"obshsvd")
+        self.obshsvd_table = QTableView(self.obshsvd)
+        self.obshsvd_table.setObjectName(u"obshsvd_table")
+        self.obshsvd_table.setGeometry(QRect(0, 0, 1160, 530))
+        self.db_tables.addWidget(self.obshsvd)
         self.tables_area.addWidget(self.tables_page)
         self.group_page = QWidget()
         self.group_page.setObjectName(u"group_page")
@@ -90,23 +98,23 @@ class Ui_MainWindow(object):
         self.modify_table_cb = QComboBox(self.centralwidget)
         self.modify_table_cb.setObjectName(u"modify_table_cb")
         self.modify_table_cb.setGeometry(QRect(1050, 50, 131, 31))
-        self.widget = QWidget(self.centralwidget)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(190, 630, 801, 41))
-        self.crud_menu = QHBoxLayout(self.widget)
+        self.layoutWidget = QWidget(self.centralwidget)
+        self.layoutWidget.setObjectName(u"layoutWidget")
+        self.layoutWidget.setGeometry(QRect(190, 630, 801, 41))
+        self.crud_menu = QHBoxLayout(self.layoutWidget)
         self.crud_menu.setObjectName(u"crud_menu")
         self.crud_menu.setContentsMargins(0, 0, 0, 0)
-        self.create_btn = QPushButton(self.widget)
+        self.create_btn = QPushButton(self.layoutWidget)
         self.create_btn.setObjectName(u"create_btn")
 
         self.crud_menu.addWidget(self.create_btn)
 
-        self.update_btn = QPushButton(self.widget)
+        self.update_btn = QPushButton(self.layoutWidget)
         self.update_btn.setObjectName(u"update_btn")
 
         self.crud_menu.addWidget(self.update_btn)
 
-        self.delete_btn = QPushButton(self.widget)
+        self.delete_btn = QPushButton(self.layoutWidget)
         self.delete_btn.setObjectName(u"delete_btn")
 
         self.crud_menu.addWidget(self.delete_btn)
@@ -119,7 +127,7 @@ class Ui_MainWindow(object):
         self.tables.setObjectName(u"tables")
         self.groups = QMenu(self.menuBar)
         self.groups.setObjectName(u"groups")
-        self.groups.setGeometry(QRect(332, 99, 182, 50))
+        self.groups.setGeometry(QRect(396, 125, 134, 50))
         self.help = QMenu(self.menuBar)
         self.help.setObjectName(u"help")
         MainWindow.setMenuBar(self.menuBar)
@@ -130,6 +138,7 @@ class Ui_MainWindow(object):
         self.tables.addAction(self.vistavki)
         self.tables.addAction(self.grnti)
         self.tables.addAction(self.vuz_2)
+        self.tables.addAction(self.Obshaya_cvodka)
 
         self.retranslateUi(MainWindow)
 
@@ -144,6 +153,7 @@ class Ui_MainWindow(object):
         self.vistavki.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0441\u0442\u0430\u0432\u043a\u0438", None))
         self.grnti.setText(QCoreApplication.translate("MainWindow", u"\u0413\u0420\u041d\u0422\u0418", None))
         self.vuz_2.setText(QCoreApplication.translate("MainWindow", u"\u0412\u0423\u0417\u044b", None))
+        self.Obshaya_cvodka.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0431\u0449\u0430\u044f \u0441\u0432\u043e\u0434\u043a\u0430", None))
         self.create_btn.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.update_btn.setText(QCoreApplication.translate("MainWindow", u"\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.delete_btn.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))

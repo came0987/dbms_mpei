@@ -17,13 +17,14 @@ class ExponatDBMS(QMainWindow):
         self.sort_states = {
             "vyst_mo_table": {},
             "vuz_table": {},
-            "grntirub_table": {}
+            "grntirub_table": {},
+            "obshsvd_table": {}
         }
 
         self.init_tables()
         self.ui.tables.triggered.connect(self.set_current_table)
         # self.ui.grnti.triggered.connect(self.set_current_table)
-        # self.ui.vistavki.triggered.connect(self.set_current_table)
+        # self.ui.vistavki.triggered.connect(self.set_curreomnt_table)
         # self.ui.vuz_2.triggered.connect(self.set_current_table)
         # self.ui.tables_combobox.activated.connect(self.set_current_table)
 
@@ -31,18 +32,21 @@ class ExponatDBMS(QMainWindow):
         self.models = {
             "vyst_mo_table": self.create_model("vyst_mo"),
             "vuz_table": self.create_model("VUZ"),
-            "grntirub_table": self.create_model("grntirub")
+            "grntirub_table": self.create_model("grntirub"),
+            "obshsvd_table": self.create_model("obshsvd")
         }
 
         # Устанавливаем модели и заголовки
         self.ui.vyst_mo_table.setModel(self.models["vyst_mo_table"])
         self.ui.vuz_table.setModel(self.models["vuz_table"])
         self.ui.grntirub_table.setModel(self.models["grntirub_table"])
+        self.ui.obshsvd_table.setModel(self.models["obshsvd_table"])
 
         # Отключаем сортировку по заголовкам при первом выводе
         self.ui.vyst_mo_table.setSortingEnabled(False)
         self.ui.vuz_table.setSortingEnabled(False)
         self.ui.grntirub_table.setSortingEnabled(False)
+        self.ui.obshsvd_table.setSortingEnabled(False)
 
         # Настройка заголовков
         self.set_custom_headers("vyst_mo_table", ["Код ВУЗа/организации",
@@ -55,6 +59,14 @@ class ExponatDBMS(QMainWindow):
 
         self.set_custom_headers("grntirub_table", ["Код рубрики", "Наименование рубрики"])
 
+        self.set_custom_headers("obshsvd_table", ["Код ВУЗа/организации", "Название ВУЗа", "Полное наименование", "Сокращенное наименование",
+                                                  "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль",
+                                                  "Признак  формы НИР", "Регистрационный номер НИР", "Наименование проекта/НИР",
+                                                  "Коды  ГРНТИ", "Наименование рубрики", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
+                                                  "Признак", "Выставки", "Название выставочного экспоната"])
+
+
+
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
             lambda index: self.handle_header_click(self.ui.vyst_mo_table, index)
@@ -65,9 +77,12 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.horizontalHeader().sectionClicked.connect(
             lambda index: self.handle_header_click(self.ui.grntirub_table, index)
         )
+        self.ui.obshsvd_table.horizontalHeader().sectionClicked.connect(
+            lambda index: self.handle_header_click(self.ui.obshsvd_table, index)
+        )
 
         # Устанавливаем режим растягивания заголовков
-        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table]:
+        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.obshsvd_table]:
             header = table.horizontalHeader()
             header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             # Устанавливаем автоматическое изменение ширины столбцов
@@ -94,6 +109,8 @@ class ExponatDBMS(QMainWindow):
             self.ui.db_tables.setCurrentIndex(0)
         elif text == "ВУЗы":
             self.ui.db_tables.setCurrentIndex(1)
+        elif text == "Общая сводка":
+            self.ui.db_tables.setCurrentIndex(3)
 
     def handle_header_click(self, table, logicalIndex):
         # Получаем имя таблицы для правильного отслеживания состояния
