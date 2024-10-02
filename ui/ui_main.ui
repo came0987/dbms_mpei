@@ -81,85 +81,6 @@
        </rect>
       </property>
      </widget>
-     <widget class="QStackedWidget" name="tables_area">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>80</y>
-        <width>1160</width>
-        <height>530</height>
-       </rect>
-      </property>
-      <property name="currentIndex">
-       <number>1</number>
-      </property>
-      <widget class="QWidget" name="tables_page">
-       <widget class="QStackedWidget" name="db_tables">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>1160</width>
-          <height>530</height>
-         </rect>
-        </property>
-        <widget class="QWidget" name="vyst_mo">
-         <widget class="QTableView" name="vyst_mo_table">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1160</width>
-            <height>530</height>
-           </rect>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </widget>
-        <widget class="QWidget" name="vuz">
-         <widget class="QTableView" name="vuz_table">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1160</width>
-            <height>530</height>
-           </rect>
-          </property>
-         </widget>
-        </widget>
-        <widget class="QWidget" name="grntirub">
-         <widget class="QTableView" name="grntirub_table">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1160</width>
-            <height>530</height>
-           </rect>
-          </property>
-         </widget>
-        </widget>
-       </widget>
-      </widget>
-      <widget class="QWidget" name="group_page">
-       <widget class="QTableWidget" name="group_table">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>1160</width>
-          <height>530</height>
-         </rect>
-        </property>
-       </widget>
-      </widget>
-     </widget>
      <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
@@ -205,15 +126,90 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="filter_container" native="true">
+     <widget class="QStackedWidget" name="db_tables">
       <property name="geometry">
        <rect>
-        <x>380</x>
+        <x>20</x>
+        <y>80</y>
+        <width>1160</width>
+        <height>530</height>
+       </rect>
+      </property>
+      <widget class="QWidget" name="vyst_mo">
+       <widget class="QTableView" name="vyst_mo_table">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1160</width>
+          <height>530</height>
+         </rect>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="vuz">
+       <widget class="QTableView" name="vuz_table">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1160</width>
+          <height>530</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="grntirub">
+       <widget class="QTableView" name="grntirub_table">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1160</width>
+          <height>530</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+     <widget class="QScrollArea" name="filter_container_widget">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
         <y>10</y>
-        <width>661</width>
+        <width>671</width>
         <height>61</height>
        </rect>
       </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>669</width>
+         <height>59</height>
+        </rect>
+       </property>
+       <widget class="QWidget" name="filter_container" native="true">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>671</width>
+          <height>61</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
      </widget>
     </widget>
     <widget class="QWidget" name="menu_groups_page">
