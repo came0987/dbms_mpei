@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_main.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -110,17 +110,17 @@ class Ui_MainWindow(object):
         self.grntirub_table.setObjectName(u"grntirub_table")
         self.grntirub_table.setGeometry(QRect(0, 0, 1160, 530))
         self.db_tables.addWidget(self.grntirub)
-        self.filter_container_widget = QScrollArea(self.menu_tables_page)
-        self.filter_container_widget.setObjectName(u"filter_container_widget")
-        self.filter_container_widget.setGeometry(QRect(370, 10, 671, 61))
-        self.filter_container_widget.setWidgetResizable(True)
+        self.scrollArea = QScrollArea(self.menu_tables_page)
+        self.scrollArea.setObjectName(u"scrollArea")
+        self.scrollArea.setGeometry(QRect(380, 0, 631, 81))
+        self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 669, 59))
-        self.filter_container = QWidget(self.scrollAreaWidgetContents)
-        self.filter_container.setObjectName(u"filter_container")
-        self.filter_container.setGeometry(QRect(0, 0, 671, 61))
-        self.filter_container_widget.setWidget(self.scrollAreaWidgetContents)
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 629, 79))
+        self.widget = QWidget(self.scrollAreaWidgetContents)
+        self.widget.setObjectName(u"widget")
+        self.widget.setGeometry(QRect(0, 0, 621, 80))
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.pages_.addWidget(self.menu_tables_page)
         self.menu_groups_page = QWidget()
         self.menu_groups_page.setObjectName(u"menu_groups_page")
@@ -142,25 +142,25 @@ class Ui_MainWindow(object):
         font = QFont()
         font.setPointSize(12)
         self.pushButton_2.setFont(font)
-        self.widget = QWidget(self.menu_groups_page)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(20, 30, 421, 41))
-        self.horizontalLayout = QHBoxLayout(self.widget)
+        self.layoutWidget1 = QWidget(self.menu_groups_page)
+        self.layoutWidget1.setObjectName(u"layoutWidget1")
+        self.layoutWidget1.setGeometry(QRect(20, 30, 421, 41))
+        self.horizontalLayout = QHBoxLayout(self.layoutWidget1)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.comboBox_2 = QComboBox(self.widget)
+        self.comboBox_2 = QComboBox(self.layoutWidget1)
         self.comboBox_2.setObjectName(u"comboBox_2")
         self.comboBox_2.setFont(font)
 
         self.horizontalLayout.addWidget(self.comboBox_2)
 
-        self.pushButton = QPushButton(self.widget)
+        self.pushButton = QPushButton(self.layoutWidget1)
         self.pushButton.setObjectName(u"pushButton")
         self.pushButton.setFont(font)
 
         self.horizontalLayout.addWidget(self.pushButton)
 
-        self.pushButton_3 = QPushButton(self.widget)
+        self.pushButton_3 = QPushButton(self.layoutWidget1)
         self.pushButton_3.setObjectName(u"pushButton_3")
         self.pushButton_3.setFont(font)
 
