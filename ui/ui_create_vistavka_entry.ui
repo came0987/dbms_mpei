@@ -34,7 +34,7 @@
     <set>Qt::AlignmentFlag::AlignCenter</set>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="save_btn">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -63,7 +63,7 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <item>
-     <widget class="QComboBox" name="comboBox">
+     <widget class="QComboBox" name="vuz">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -118,7 +118,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QComboBox" name="comboBox_2">
+     <widget class="QComboBox" name="priznak">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -140,7 +140,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit">
+     <widget class="QLineEdit" name="reg_number">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -155,7 +155,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_2">
+     <widget class="QLineEdit" name="nir_name">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -170,7 +170,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_3">
+     <widget class="QLineEdit" name="grnti">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -187,7 +187,7 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QLineEdit" name="lineEdit_4">
+       <widget class="QLineEdit" name="nir_ruk">
         <property name="font">
          <font>
           <pointsize>12</pointsize>
@@ -204,7 +204,7 @@
       <item>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QLineEdit" name="lineEdit_5">
+         <widget class="QLineEdit" name="ruk_doljnost">
           <property name="font">
            <font>
             <pointsize>12</pointsize>
@@ -219,7 +219,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit_6">
+         <widget class="QLineEdit" name="ruk_zvanie">
           <property name="font">
            <font>
             <pointsize>12</pointsize>
@@ -234,7 +234,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit_7">
+         <widget class="QLineEdit" name="ruk_stepen">
           <property name="font">
            <font>
             <pointsize>12</pointsize>
@@ -253,7 +253,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QComboBox" name="comboBox_3">
+     <widget class="QComboBox" name="exponat_est">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -280,7 +280,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_8">
+     <widget class="QLineEdit" name="vistavka">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -295,7 +295,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_9">
+     <widget class="QLineEdit" name="exponat_name">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
