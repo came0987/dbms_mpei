@@ -193,13 +193,13 @@
        </widget>
       </widget>
      </widget>
-     <widget class="QScrollArea" name="filter_container_widget">
+     <widget class="QScrollArea" name="scrollArea">
       <property name="geometry">
        <rect>
-        <x>370</x>
-        <y>10</y>
-        <width>671</width>
-        <height>61</height>
+        <x>380</x>
+        <y>0</y>
+        <width>631</width>
+        <height>81</height>
        </rect>
       </property>
       <property name="layoutDirection">
@@ -213,17 +213,17 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>669</width>
-         <height>59</height>
+         <width>629</width>
+         <height>79</height>
         </rect>
        </property>
-       <widget class="QWidget" name="filter_container" native="true">
+       <widget class="QWidget" name="widget" native="true">
         <property name="geometry">
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>671</width>
-          <height>61</height>
+          <width>621</width>
+          <height>80</height>
          </rect>
         </property>
        </widget>
