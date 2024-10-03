@@ -135,6 +135,21 @@
         <height>530</height>
        </rect>
       </property>
+      <property name="currentIndex">
+       <number>3</number>
+      </property>
+      <widget class="QWidget" name="svod">
+       <widget class="QTableView" name="svod_table">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1160</width>
+          <height>530</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
       <widget class="QWidget" name="vyst_mo">
        <widget class="QTableView" name="vyst_mo_table">
         <property name="geometry">
@@ -186,6 +201,9 @@
         <width>671</width>
         <height>61</height>
        </rect>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::LayoutDirection::LeftToRight</enum>
       </property>
       <property name="widgetResizable">
        <bool>true</bool>
@@ -254,7 +272,7 @@
        <string>Экспорт</string>
       </property>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -314,13 +332,14 @@
      <height>22</height>
     </rect>
    </property>
-   <widget class="QMenu" name="tables">
+   <widget class="QMenu" name="tables_menu">
     <property name="title">
      <string>Таблицы</string>
     </property>
-    <addaction name="vistavki"/>
-    <addaction name="grnti"/>
-    <addaction name="vuz_2"/>
+    <addaction name="svod_action"/>
+    <addaction name="vistavki_action"/>
+    <addaction name="grnti_action"/>
+    <addaction name="vuz_action"/>
    </widget>
    <widget class="QMenu" name="groups">
     <property name="geometry">
@@ -340,23 +359,28 @@
      <string>Помощь</string>
     </property>
    </widget>
-   <addaction name="tables"/>
+   <addaction name="tables_menu"/>
    <addaction name="groups"/>
    <addaction name="help"/>
   </widget>
-  <action name="vistavki">
+  <action name="vistavki_action">
    <property name="text">
     <string>Выставки</string>
    </property>
   </action>
-  <action name="grnti">
+  <action name="grnti_action">
    <property name="text">
     <string>ГРНТИ</string>
    </property>
   </action>
-  <action name="vuz_2">
+  <action name="vuz_action">
    <property name="text">
     <string>ВУЗы</string>
+   </property>
+  </action>
+  <action name="svod_action">
+   <property name="text">
+    <string>Сводная таблица</string>
    </property>
   </action>
  </widget>

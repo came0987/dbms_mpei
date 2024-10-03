@@ -9,9 +9,11 @@ from sqlalchemy import create_engine
 df = pd.read_excel('./data/vyst_mo.xlsx', index_col=0)
 df1 = pd.read_excel('./data/VUZ.xlsx', index_col=0)
 df2 = pd.read_excel('./data/grntirub.xlsx', index_col=0)
+df3 = pd.read_excel('./data/svod.xlsx', index_col=0)
 engine = create_engine('sqlite:///data_base.db')
 
 df.to_sql('vyst_mo', con=engine, if_exists='replace')
 df1.to_sql('VUZ', con=engine, if_exists='replace')
 df2.to_sql('grntirub', con=engine, if_exists='replace')
+df3.to_sql('svod', con=engine, if_exists='replace')
 
