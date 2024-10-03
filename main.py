@@ -314,7 +314,10 @@
 #     sys.exit(app.exec())
 #
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QWidget
+
+import PySide6
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, \
+    QWidget, QHeaderView
 from PySide6.QtSql import QSqlTableModel
 from PySide6.QtCore import Qt
 from connection import Data
@@ -380,6 +383,46 @@ class ExponatDBMS(QMainWindow):
                                                 "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"])
 
         self.set_custom_headers("grntirub_table", ["Код рубрики", "Наименование рубрики"])
+
+        # Подключаем сортировку для каждой таблицы
+        self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
+            lambda index: self.handle_header_click(self.ui.vyst_mo_table, index)
+        )
+        self.ui.vuz_table.horizontalHeader().sectionClicked.connect(
+            lambda index: self.handle_header_click(self.ui.vuz_table, index)
+        )
+        self.ui.grntirub_table.horizontalHeader().sectionClicked.connect(
+            lambda index: self.handle_header_click(self.ui.grntirub_table, index)
+        )
+
+        # Устанавливаем режим растягивания заголовков
+        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table]:
+            header = table.horizontalHeader()
+            header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+            # Устанавливаем автоматическое изменение ширины столбцов
+            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+
+    def handle_header_click(self, table, logicalIndex):
+        # Получаем имя таблицы для правильного отслеживания состояния
+        table_name = table.objectName()
+
+        # Получаем текущее состояние сортировки для выбранного столбца
+        current_sort_order = self.sort_states[table_name].get(logicalIndex, None)
+
+        # Устанавливаем модель, связанную с таблицей
+        model = table.model()
+
+        # Устанавливаем следующее состояние сортировки
+        if current_sort_order is None:
+            model.sort(logicalIndex, Qt.AscendingOrder)
+            self.sort_states[table_name][logicalIndex] = Qt.AscendingOrder
+        elif current_sort_order == Qt.AscendingOrder:
+            model.sort(logicalIndex, Qt.DescendingOrder)
+            self.sort_states[table_name][logicalIndex] = Qt.DescendingOrder
+        else:
+            model.setSort(-1, Qt.AscendingOrder)  # Сбрасываем сортировку
+            model.select()  # Перезагружаем данные в исходном порядке
+            self.sort_states[table_name][logicalIndex] = None
 
     def create_model(self, table_name: str):
         model = NonEditableSqlTableModel(self)
@@ -489,6 +532,7 @@ class ExponatDBMS(QMainWindow):
             self.current_model.setFilter(" AND ".join(combined_filter))
         else:
             self.current_model.setFilter("")
+
 
 class NonEditableSqlTableModel(QSqlTableModel):
     def flags(self, index):
