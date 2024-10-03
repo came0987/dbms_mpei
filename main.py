@@ -1,11 +1,10 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QWidget
 
-import PySide6.QtWidgets
+import PySide6
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QWidget
 from PySide6.QtCore import Qt, QAbstractItemModel
-from PySide6.QtWidgets import QApplication, QMainWindow, QHeaderView, QTableView
+from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
-from PySide6.QtCore import Qt
 from connection import Data
 from ui_main_side import Ui_MainWindow
 from ui_vistavka_entry import Ui_add_zapis_dialog
@@ -41,16 +40,9 @@ class ExponatDBMS(QMainWindow):
         self.ui.add_filters_cb.activated.connect(self.add_filter_field)
 
         # # Кнопка для сброса фильтров
-        # self.reset_filter_btn = QPushButton("Сбросить фильтры")
-        # self.reset_filter_btn.clicked.connect(self.reset_filters)
-        # self.filter_layout.addWidget(self.reset_filter_btn)
         self.ui.tables_menu.triggered.connect(self.set_current_table)
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         self.ui.delete_btn.clicked.connect(self.delete_record)
-        # self.ui.grnti.triggered.connect(self.set_current_table)
-        # self.ui.vistavki.triggered.connect(self.set_current_table)
-        # self.ui.vuz_2.triggered.connect(self.set_current_table)
-        # self.ui.tables_combobox.activated.connect(self.set_current_table)
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
@@ -282,19 +274,23 @@ class ExponatDBMS(QMainWindow):
         text = checked_action.text()
         if text == "ГРНТИ":
             self.ui.db_tables.setCurrentIndex(3)
+            self.current_model = self.grntirub_table_model
         elif text == "Выставки":
             self.ui.db_tables.setCurrentIndex(1)
+            self.current_model = self.vyst_mo_table_model
         elif text == "ВУЗы":
             self.ui.db_tables.setCurrentIndex(2)
+            self.current_model = self.vuz_table_model
         elif text == "Сводная таблица":
             self.ui.db_tables.setCurrentIndex(0)
+            self.current_model = self.svod_table_model
 
         self.update_filter_combobox()
 
     def update_filter_combobox(self):
         self.ui.add_filters_cb.clear()
         if self.current_model:
-            headers = [self.current_model.headerData(i, Qt.Horizontal) for i in range(self.current_model.columnCount())]
+            headers = [self.current_model.headerData(i, Qt.Orientation.Horizontal) for i in range(self.current_model.columnCount())]
             self.ui.add_filters_cb.addItems(headers)
 
     def handle_header_click(self, table, logicalIndex):
@@ -370,16 +366,6 @@ class ExponatDBMS(QMainWindow):
 
             # Обновляем все фильтры
             self.update_all_filters()
-
-    # def reset_filters(self):
-    #     self.current_model.setFilter("")  # Убираем все фильтры
-    #     self.filter_fields.clear()  # Очищаем словарь фильтров
-    #     while self.filter_layout.count() > 1:  # Оставляем только кнопку сброса фильтров
-    #         item = self.filter_layout.itemAt(0)
-    #         widget = item.widget()
-    #         if widget is not None:
-    #             widget.deleteLater()  # Удаляем виджет фильтра
-    #     self.update_filter_combobox()  # Обновляем комбобокс фильтров
 
     def update_all_filters(self):
         combined_filter = []
