@@ -28,8 +28,8 @@ class ExponatDBMS(QMainWindow):
             "svod_table": {}
         }
         self.init_tables()
-        self.ui.tables.triggered.connect(self.set_current_table)
-        self.ui.create_btn.clicked.connect(self.open_create_dialog)
+        self.ui.tables_menu.triggered.connect(self.set_current_table)
+        self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
 
         # Создаем виджет-контейнер для фильтров
         self.filter_container_widget = QWidget()
