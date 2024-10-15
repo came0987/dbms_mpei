@@ -17,16 +17,16 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QHBoxLayout,
-    QHeaderView, QMainWindow, QMenu, QMenuBar,
-    QPushButton, QScrollArea, QSizePolicy, QStackedWidget,
-    QTabWidget, QTableView, QWidget)
+    QHeaderView, QLayout, QMainWindow, QMenu,
+    QMenuBar, QPushButton, QSizePolicy, QStackedWidget,
+    QTabWidget, QTableView, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.setEnabled(True)
-        MainWindow.resize(1200, 700)
+        MainWindow.resize(1124, 700)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -51,12 +51,6 @@ class Ui_MainWindow(object):
         self.pages_.setObjectName(u"pages_")
         self.menu_tables_page = QWidget()
         self.menu_tables_page.setObjectName(u"menu_tables_page")
-        self.add_filters_cb = QComboBox(self.menu_tables_page)
-        self.add_filters_cb.setObjectName(u"add_filters_cb")
-        self.add_filters_cb.setGeometry(QRect(10, 20, 141, 31))
-        self.modify_table_cb = QComboBox(self.menu_tables_page)
-        self.modify_table_cb.setObjectName(u"modify_table_cb")
-        self.modify_table_cb.setGeometry(QRect(1050, 20, 131, 31))
         self.layoutWidget = QWidget(self.menu_tables_page)
         self.layoutWidget.setObjectName(u"layoutWidget")
         self.layoutWidget.setGeometry(QRect(190, 620, 801, 41))
@@ -86,48 +80,80 @@ class Ui_MainWindow(object):
 
         self.db_tables = QStackedWidget(self.menu_tables_page)
         self.db_tables.setObjectName(u"db_tables")
-        self.db_tables.setGeometry(QRect(179, 80, 1001, 530))
+        self.db_tables.setGeometry(QRect(0, 100, 1111, 531))
         self.svod = QWidget()
         self.svod.setObjectName(u"svod")
+        self.gridLayout_4 = QGridLayout(self.svod)
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
         self.svod_table = QTableView(self.svod)
         self.svod_table.setObjectName(u"svod_table")
-        self.svod_table.setGeometry(QRect(0, 0, 1160, 530))
+
+        self.gridLayout_4.addWidget(self.svod_table, 0, 0, 1, 1)
+
         self.db_tables.addWidget(self.svod)
         self.vyst_mo = QWidget()
         self.vyst_mo.setObjectName(u"vyst_mo")
+        self.gridLayout_6 = QGridLayout(self.vyst_mo)
+        self.gridLayout_6.setObjectName(u"gridLayout_6")
         self.vyst_mo_table = QTableView(self.vyst_mo)
         self.vyst_mo_table.setObjectName(u"vyst_mo_table")
-        self.vyst_mo_table.setGeometry(QRect(0, 0, 1160, 530))
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.vyst_mo_table.sizePolicy().hasHeightForWidth())
         self.vyst_mo_table.setSizePolicy(sizePolicy1)
+
+        self.gridLayout_6.addWidget(self.vyst_mo_table, 0, 0, 1, 1)
+
         self.db_tables.addWidget(self.vyst_mo)
         self.vuz = QWidget()
         self.vuz.setObjectName(u"vuz")
+        self.gridLayout_5 = QGridLayout(self.vuz)
+        self.gridLayout_5.setObjectName(u"gridLayout_5")
         self.vuz_table = QTableView(self.vuz)
         self.vuz_table.setObjectName(u"vuz_table")
-        self.vuz_table.setGeometry(QRect(0, 0, 1160, 530))
+
+        self.gridLayout_5.addWidget(self.vuz_table, 0, 0, 1, 1)
+
         self.db_tables.addWidget(self.vuz)
         self.grntirub = QWidget()
         self.grntirub.setObjectName(u"grntirub")
+        self.gridLayout_3 = QGridLayout(self.grntirub)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
         self.grntirub_table = QTableView(self.grntirub)
         self.grntirub_table.setObjectName(u"grntirub_table")
-        self.grntirub_table.setGeometry(QRect(0, 0, 1160, 530))
+
+        self.gridLayout_3.addWidget(self.grntirub_table, 0, 0, 1, 1)
+
         self.db_tables.addWidget(self.grntirub)
-        self.scrollArea = QScrollArea(self.menu_tables_page)
-        self.scrollArea.setObjectName(u"scrollArea")
-        self.scrollArea.setGeometry(QRect(10, 80, 161, 531))
-        self.scrollArea.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollAreaWidgetContents = QWidget()
-        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 159, 529))
-        self.widget = QWidget(self.scrollAreaWidgetContents)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(0, 0, 161, 531))
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.layoutWidget1 = QWidget(self.menu_tables_page)
+        self.layoutWidget1.setObjectName(u"layoutWidget1")
+        self.layoutWidget1.setGeometry(QRect(11, 10, 1081, 67))
+        self.toplevel_layout = QHBoxLayout(self.layoutWidget1)
+        self.toplevel_layout.setObjectName(u"toplevel_layout")
+        self.toplevel_layout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
+        self.add_filters_cb = QComboBox(self.layoutWidget1)
+        self.add_filters_cb.setObjectName(u"add_filters_cb")
+        font = QFont()
+        font.setPointSize(12)
+        self.add_filters_cb.setFont(font)
+        self.add_filters_cb.setEditable(False)
+        self.add_filters_cb.setMinimumContentsLength(2)
+
+        self.verticalLayout.addWidget(self.add_filters_cb)
+
+        self.delete_all_filters = QPushButton(self.layoutWidget1)
+        self.delete_all_filters.setObjectName(u"delete_all_filters")
+        self.delete_all_filters.setFont(font)
+
+        self.verticalLayout.addWidget(self.delete_all_filters)
+
+
+        self.toplevel_layout.addLayout(self.verticalLayout)
+
         self.pages_.addWidget(self.menu_tables_page)
         self.menu_groups_page = QWidget()
         self.menu_groups_page.setObjectName(u"menu_groups_page")
@@ -135,8 +161,6 @@ class Ui_MainWindow(object):
         self.gridLayout.setObjectName(u"gridLayout")
         self.pushButton_2 = QPushButton(self.menu_groups_page)
         self.pushButton_2.setObjectName(u"pushButton_2")
-        font = QFont()
-        font.setPointSize(12)
         self.pushButton_2.setFont(font)
 
         self.gridLayout.addWidget(self.pushButton_2, 0, 1, 1, 1)
@@ -145,9 +169,13 @@ class Ui_MainWindow(object):
         self.groups_pages.setObjectName(u"groups_pages")
         self.group_1 = QWidget()
         self.group_1.setObjectName(u"group_1")
+        self.gridLayout_7 = QGridLayout(self.group_1)
+        self.gridLayout_7.setObjectName(u"gridLayout_7")
         self.tableView = QTableView(self.group_1)
         self.tableView.setObjectName(u"tableView")
-        self.tableView.setGeometry(QRect(0, 0, 1160, 530))
+
+        self.gridLayout_7.addWidget(self.tableView, 0, 0, 1, 1)
+
         self.groups_pages.addWidget(self.group_1)
         self.group_2 = QWidget()
         self.group_2.setObjectName(u"group_2")
@@ -185,7 +213,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
-        self.menuBar.setGeometry(QRect(0, 0, 1200, 22))
+        self.menuBar.setGeometry(QRect(0, 0, 1124, 22))
         self.tables_menu = QMenu(self.menuBar)
         self.tables_menu.setObjectName(u"tables_menu")
         self.groups = QMenu(self.menuBar)
@@ -206,7 +234,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
 
         self.pages_.setCurrentIndex(0)
-        self.db_tables.setCurrentIndex(3)
+        self.db_tables.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -224,6 +252,8 @@ class Ui_MainWindow(object):
 
         self.comboBox.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c \u0432 \u0433\u0440\u0443\u043f\u043f\u0443", None))
         self.delete_btn.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
+        self.add_filters_cb.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0444\u0438\u043b\u044c\u0442\u0440", None))
+        self.delete_all_filters.setText(QCoreApplication.translate("MainWindow", u"\u0421\u0431\u0440\u043e\u0441\u0438\u0442\u044c \u0432\u0441\u0435 \u0444\u0438\u043b\u044c\u0442\u0440\u044b", None))
         self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"\u042d\u043a\u0441\u043f\u043e\u0440\u0442", None))
         self.comboBox_2.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))

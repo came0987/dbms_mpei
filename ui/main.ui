@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1200</width>
+    <width>1124</width>
     <height>700</height>
    </rect>
   </property>
@@ -45,26 +45,6 @@
        <number>0</number>
       </property>
       <widget class="QWidget" name="menu_tables_page">
-       <widget class="QComboBox" name="add_filters_cb">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>20</y>
-          <width>141</width>
-          <height>31</height>
-         </rect>
-        </property>
-       </widget>
-       <widget class="QComboBox" name="modify_table_cb">
-        <property name="geometry">
-         <rect>
-          <x>1050</x>
-          <y>20</y>
-          <width>131</width>
-          <height>31</height>
-         </rect>
-        </property>
-       </widget>
        <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
@@ -113,105 +93,99 @@
        <widget class="QStackedWidget" name="db_tables">
         <property name="geometry">
          <rect>
-          <x>179</x>
-          <y>80</y>
-          <width>1001</width>
-          <height>530</height>
-         </rect>
-        </property>
-        <property name="currentIndex">
-         <number>3</number>
-        </property>
-        <widget class="QWidget" name="svod">
-         <widget class="QTableView" name="svod_table">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1160</width>
-            <height>530</height>
-           </rect>
-          </property>
-         </widget>
-        </widget>
-        <widget class="QWidget" name="vyst_mo">
-         <widget class="QTableView" name="vyst_mo_table">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1160</width>
-            <height>530</height>
-           </rect>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </widget>
-        <widget class="QWidget" name="vuz">
-         <widget class="QTableView" name="vuz_table">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1160</width>
-            <height>530</height>
-           </rect>
-          </property>
-         </widget>
-        </widget>
-        <widget class="QWidget" name="grntirub">
-         <widget class="QTableView" name="grntirub_table">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>1160</width>
-            <height>530</height>
-           </rect>
-          </property>
-         </widget>
-        </widget>
-       </widget>
-       <widget class="QScrollArea" name="scrollArea">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>80</y>
-          <width>161</width>
+          <x>0</x>
+          <y>100</y>
+          <width>1111</width>
           <height>531</height>
          </rect>
         </property>
-        <property name="layoutDirection">
-         <enum>Qt::LayoutDirection::LeftToRight</enum>
+        <property name="currentIndex">
+         <number>0</number>
         </property>
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="scrollAreaWidgetContents">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>159</width>
-           <height>529</height>
-          </rect>
-         </property>
-         <widget class="QWidget" name="widget" native="true">
-          <property name="geometry">
-           <rect>
-            <x>0</x>
-            <y>0</y>
-            <width>161</width>
-            <height>531</height>
-           </rect>
-          </property>
-         </widget>
+        <widget class="QWidget" name="svod">
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="0" column="0">
+           <widget class="QTableView" name="svod_table"/>
+          </item>
+         </layout>
         </widget>
+        <widget class="QWidget" name="vyst_mo">
+         <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="0">
+           <widget class="QTableView" name="vyst_mo_table">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="vuz">
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
+           <widget class="QTableView" name="vuz_table"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="grntirub">
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QTableView" name="grntirub_table"/>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+       <widget class="QWidget" name="layoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>11</x>
+          <y>10</y>
+          <width>1081</width>
+          <height>67</height>
+         </rect>
+        </property>
+        <layout class="QHBoxLayout" name="toplevel_layout">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <property name="sizeConstraint">
+            <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
+           </property>
+           <item>
+            <widget class="QComboBox" name="add_filters_cb">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="editable">
+              <bool>false</bool>
+             </property>
+             <property name="minimumContentsLength">
+              <number>2</number>
+             </property>
+             <property name="placeholderText">
+              <string>Добавить фильтр</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="delete_all_filters">
+             <property name="font">
+              <font>
+               <pointsize>12</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>Сбросить все фильтры</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </widget>
       </widget>
       <widget class="QWidget" name="menu_groups_page">
@@ -231,16 +205,11 @@
         <item row="1" column="0" colspan="2">
          <widget class="QStackedWidget" name="groups_pages">
           <widget class="QWidget" name="group_1">
-           <widget class="QTableView" name="tableView">
-            <property name="geometry">
-             <rect>
-              <x>0</x>
-              <y>0</y>
-              <width>1160</width>
-              <height>530</height>
-             </rect>
-            </property>
-           </widget>
+           <layout class="QGridLayout" name="gridLayout_7">
+            <item row="0" column="0">
+             <widget class="QTableView" name="tableView"/>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="group_2"/>
          </widget>
@@ -296,7 +265,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1200</width>
+     <width>1124</width>
      <height>22</height>
     </rect>
    </property>

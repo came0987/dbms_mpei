@@ -1,7 +1,8 @@
 import sys
 
 import PySide6
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
+from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
+                               QHBoxLayout, QVBoxLayout, QLabel)
 from PySide6.QtCore import Qt, QAbstractItemModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
@@ -19,7 +20,7 @@ class ExponatDBMS(QMainWindow):
         self.showMaximized()
         self.current_model = None  # Текущая модель для фильтрации
         self.filter_fields = {}  # Словарь для хранения полей фильтрации для каждого столбца
-
+        self.ui.toplevel_layout.addWidget(FilterWidget())
         # Хранение состояния сортировки для каждой таблицы
         self.sort_states = {
             "vyst_mo_table": {},
@@ -34,8 +35,8 @@ class ExponatDBMS(QMainWindow):
         # Создаем виджет-контейнер для фильтров
         self.filter_container_widget = QWidget()
         self.filter_layout = QVBoxLayout(self.filter_container_widget)  # Layout для фильтров
-        self.ui.scrollArea.setWidget(self.filter_container_widget)  # Устанавливаем контейнер в QScrollArea
-        self.ui.scrollArea.setWidgetResizable(True)  # Делаем виджет растягиваемым
+        # self.ui.scrollArea.setWidget(self.filter_container_widget)  # Устанавливаем контейнер в QScrollArea
+        # self.ui.scrollArea.setWidgetResizable(True)  # Делаем виджет растягиваемым
 
         # Добавляем combobox для фильтрации
         self.ui.add_filters_cb.activated.connect(self.add_filter_field)
@@ -386,6 +387,92 @@ class ExponatDBMS(QMainWindow):
 class NonEditableSqlTableModel(QSqlTableModel):
     def flags(self, index):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+
+
+class FilterWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        # Создаем основной макет
+        main_layout = QVBoxLayout(self)
+
+        # Строка 1: Номер, Ответственный, Шифр
+        row1_layout = QHBoxLayout()
+
+        # Фильтр "Номер"
+        number_filter = self.create_filter("Номер")
+        row1_layout.addLayout(number_filter)
+
+        # Фильтр "Ответственный"
+        responsible_filter = self.create_filter("Ответственный")
+        row1_layout.addLayout(responsible_filter)
+
+        # Фильтр "Шифр"
+        code_filter = self.create_filter("Шифр")
+        row1_layout.addLayout(code_filter)
+
+        # Добавляем первую строку фильтров в основной макет
+        main_layout.addLayout(row1_layout)
+
+        # Строка 2: Комментарий, Описание, Статус
+        row2_layout = QHBoxLayout()
+
+        # Фильтр "Комментарий"
+        comment_filter = self.create_filter("Комментарий")
+        row2_layout.addLayout(comment_filter)
+
+        # Фильтр "Описание"
+        description_filter = self.create_filter("Описание")
+        row2_layout.addLayout(description_filter)
+
+        # Фильтр "Статус" с выпадающим списком
+        status_filter = self.create_combobox_filter("Статус", ["Процесс", "Готово", "Отложено"])
+        row2_layout.addLayout(status_filter)
+
+        # Добавляем вторую строку фильтров в основной макет
+        main_layout.addLayout(row2_layout)
+
+    def create_filter(self, label_text):
+        """Создает QLineEdit с кнопкой очистки (крестиком)"""
+        layout = QHBoxLayout()
+
+        # Метка
+        label = QLabel(label_text)
+        layout.addWidget(label)
+
+        # Поле для ввода
+        line_edit = QLineEdit()
+        layout.addWidget(line_edit)
+
+        # Кнопка сброса
+        clear_button = QPushButton("✖️")
+        clear_button.setFixedSize(25, 25)
+        clear_button.clicked.connect(line_edit.clear)
+        layout.addWidget(clear_button)
+
+        return layout
+
+    def create_combobox_filter(self, label_text, items):
+        """Создает QComboBox с кнопкой очистки"""
+        layout = QHBoxLayout()
+
+        # Метка
+        label = QLabel(label_text)
+        layout.addWidget(label)
+
+        # Выпадающий список
+        combo_box = QComboBox()
+        combo_box.addItems(items)
+        layout.addWidget(combo_box)
+
+        # Кнопка сброса
+        clear_button = QPushButton("✖️")
+        clear_button.setFixedSize(25, 25)
+        clear_button.clicked.connect(lambda: combo_box.setCurrentIndex(-1))
+        layout.addWidget(clear_button)
+
+        return layout
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
