@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ui_main.ui'
+## Form generated from reading UI file 'main.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.7.2
 ##
@@ -16,8 +16,8 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QHeaderView,
-    QMainWindow, QMenu, QMenuBar, QPlainTextEdit,
+from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QHBoxLayout,
+    QHeaderView, QMainWindow, QMenu, QMenuBar,
     QPushButton, QScrollArea, QSizePolicy, QStackedWidget,
     QTabWidget, QTableView, QWidget)
 
@@ -32,8 +32,8 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
         MainWindow.setSizePolicy(sizePolicy)
-        MainWindow.setMinimumSize(QSize(1200, 700))
-        MainWindow.setMaximumSize(QSize(1200, 700))
+        MainWindow.setMinimumSize(QSize(200, 100))
+        MainWindow.setMaximumSize(QSize(1920, 1080))
         MainWindow.setTabShape(QTabWidget.TabShape.Rounded)
         self.vistavki_action = QAction(MainWindow)
         self.vistavki_action.setObjectName(u"vistavki_action")
@@ -45,17 +45,15 @@ class Ui_MainWindow(object):
         self.svod_action.setObjectName(u"svod_action")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
+        self.gridLayout_2 = QGridLayout(self.centralwidget)
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.pages_ = QStackedWidget(self.centralwidget)
         self.pages_.setObjectName(u"pages_")
-        self.pages_.setGeometry(QRect(0, 0, 1200, 678))
         self.menu_tables_page = QWidget()
         self.menu_tables_page.setObjectName(u"menu_tables_page")
         self.add_filters_cb = QComboBox(self.menu_tables_page)
         self.add_filters_cb.setObjectName(u"add_filters_cb")
-        self.add_filters_cb.setGeometry(QRect(220, 20, 141, 31))
-        self.search_field = QPlainTextEdit(self.menu_tables_page)
-        self.search_field.setObjectName(u"search_field")
-        self.search_field.setGeometry(QRect(40, 20, 161, 31))
+        self.add_filters_cb.setGeometry(QRect(10, 20, 141, 31))
         self.modify_table_cb = QComboBox(self.menu_tables_page)
         self.modify_table_cb.setObjectName(u"modify_table_cb")
         self.modify_table_cb.setGeometry(QRect(1050, 20, 131, 31))
@@ -88,7 +86,7 @@ class Ui_MainWindow(object):
 
         self.db_tables = QStackedWidget(self.menu_tables_page)
         self.db_tables.setObjectName(u"db_tables")
-        self.db_tables.setGeometry(QRect(20, 80, 1160, 530))
+        self.db_tables.setGeometry(QRect(179, 80, 1001, 530))
         self.svod = QWidget()
         self.svod.setObjectName(u"svod")
         self.svod_table = QTableView(self.svod)
@@ -120,21 +118,31 @@ class Ui_MainWindow(object):
         self.db_tables.addWidget(self.grntirub)
         self.scrollArea = QScrollArea(self.menu_tables_page)
         self.scrollArea.setObjectName(u"scrollArea")
-        self.scrollArea.setGeometry(QRect(380, 0, 631, 81))
+        self.scrollArea.setGeometry(QRect(10, 80, 161, 531))
+        self.scrollArea.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 629, 79))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 159, 529))
         self.widget = QWidget(self.scrollAreaWidgetContents)
         self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(0, 0, 621, 80))
+        self.widget.setGeometry(QRect(0, 0, 161, 531))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.pages_.addWidget(self.menu_tables_page)
         self.menu_groups_page = QWidget()
         self.menu_groups_page.setObjectName(u"menu_groups_page")
+        self.gridLayout = QGridLayout(self.menu_groups_page)
+        self.gridLayout.setObjectName(u"gridLayout")
+        self.pushButton_2 = QPushButton(self.menu_groups_page)
+        self.pushButton_2.setObjectName(u"pushButton_2")
+        font = QFont()
+        font.setPointSize(12)
+        self.pushButton_2.setFont(font)
+
+        self.gridLayout.addWidget(self.pushButton_2, 0, 1, 1, 1)
+
         self.groups_pages = QStackedWidget(self.menu_groups_page)
         self.groups_pages.setObjectName(u"groups_pages")
-        self.groups_pages.setGeometry(QRect(20, 80, 1160, 530))
         self.group_1 = QWidget()
         self.group_1.setObjectName(u"group_1")
         self.tableView = QTableView(self.group_1)
@@ -144,37 +152,36 @@ class Ui_MainWindow(object):
         self.group_2 = QWidget()
         self.group_2.setObjectName(u"group_2")
         self.groups_pages.addWidget(self.group_2)
-        self.pushButton_2 = QPushButton(self.menu_groups_page)
-        self.pushButton_2.setObjectName(u"pushButton_2")
-        self.pushButton_2.setGeometry(QRect(1070, 30, 111, 31))
-        font = QFont()
-        font.setPointSize(12)
-        self.pushButton_2.setFont(font)
-        self.layoutWidget1 = QWidget(self.menu_groups_page)
-        self.layoutWidget1.setObjectName(u"layoutWidget1")
-        self.layoutWidget1.setGeometry(QRect(20, 30, 421, 41))
-        self.horizontalLayout = QHBoxLayout(self.layoutWidget1)
+
+        self.gridLayout.addWidget(self.groups_pages, 1, 0, 1, 2)
+
+        self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.comboBox_2 = QComboBox(self.layoutWidget1)
+        self.comboBox_2 = QComboBox(self.menu_groups_page)
         self.comboBox_2.setObjectName(u"comboBox_2")
         self.comboBox_2.setFont(font)
 
         self.horizontalLayout.addWidget(self.comboBox_2)
 
-        self.pushButton = QPushButton(self.layoutWidget1)
+        self.pushButton = QPushButton(self.menu_groups_page)
         self.pushButton.setObjectName(u"pushButton")
         self.pushButton.setFont(font)
 
         self.horizontalLayout.addWidget(self.pushButton)
 
-        self.pushButton_3 = QPushButton(self.layoutWidget1)
+        self.pushButton_3 = QPushButton(self.menu_groups_page)
         self.pushButton_3.setObjectName(u"pushButton_3")
         self.pushButton_3.setFont(font)
 
         self.horizontalLayout.addWidget(self.pushButton_3)
 
+
+        self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
+
         self.pages_.addWidget(self.menu_groups_page)
+
+        self.gridLayout_2.addWidget(self.pages_, 0, 0, 1, 1)
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
@@ -199,7 +206,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
 
         self.pages_.setCurrentIndex(0)
-        self.db_tables.setCurrentIndex(0)
+        self.db_tables.setCurrentIndex(3)
 
 
         QMetaObject.connectSlotsByName(MainWindow)

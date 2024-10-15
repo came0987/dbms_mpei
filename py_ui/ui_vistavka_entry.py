@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ui_create_vistavka_entry.ui'
+## Form generated from reading UI file 'create_vistavka_entry.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.7.2
 ##
@@ -151,14 +151,14 @@ class Ui_add_zapis_dialog(object):
         add_zapis_dialog.setWindowTitle("")
         self.label.setText(QCoreApplication.translate("add_zapis_dialog", u"\u0414\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0438\u0441\u0438", None))
         self.save_btn.setText(QCoreApplication.translate("add_zapis_dialog", u"\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c", None))
-        self.vuz.setItemText(0, QCoreApplication.translate("add_zapis_dialog", u"1111", None))
-        self.vuz.setItemText(1, QCoreApplication.translate("add_zapis_dialog", u"2222", None))
-        self.vuz.setItemText(2, QCoreApplication.translate("add_zapis_dialog", u"11222", None))
-        self.vuz.setItemText(3, QCoreApplication.translate("add_zapis_dialog", u"11123", None))
-        self.vuz.setItemText(4, QCoreApplication.translate("add_zapis_dialog", u"3333", None))
-        self.vuz.setItemText(5, QCoreApplication.translate("add_zapis_dialog", u"22233", None))
-        self.vuz.setItemText(6, QCoreApplication.translate("add_zapis_dialog", u"2222344", None))
-        self.vuz.setItemText(7, QCoreApplication.translate("add_zapis_dialog", u"3343", None))
+        self.vuz.setItemText(0, QCoreApplication.translate("add_zapis_dialog", u"1", None))
+        self.vuz.setItemText(1, QCoreApplication.translate("add_zapis_dialog", u"2", None))
+        self.vuz.setItemText(2, QCoreApplication.translate("add_zapis_dialog", u"3", None))
+        self.vuz.setItemText(3, QCoreApplication.translate("add_zapis_dialog", u"4", None))
+        self.vuz.setItemText(4, QCoreApplication.translate("add_zapis_dialog", u"5", None))
+        self.vuz.setItemText(5, QCoreApplication.translate("add_zapis_dialog", u"6", None))
+        self.vuz.setItemText(6, QCoreApplication.translate("add_zapis_dialog", u"7", None))
+        self.vuz.setItemText(7, QCoreApplication.translate("add_zapis_dialog", u"8", None))
 
         self.vuz.setPlaceholderText(QCoreApplication.translate("add_zapis_dialog", u"\u0412\u0423\u0417", None))
         self.priznak.setItemText(0, QCoreApplication.translate("add_zapis_dialog", u"\u0415", None))

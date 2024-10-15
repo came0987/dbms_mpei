@@ -77,42 +77,42 @@
       </property>
       <item>
        <property name="text">
-        <string>1111</string>
+        <string>1</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>2222</string>
+        <string>2</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>11222</string>
+        <string>3</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>11123</string>
+        <string>4</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>3333</string>
+        <string>5</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>22233</string>
+        <string>6</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>2222344</string>
+        <string>7</string>
        </property>
       </item>
       <item>
        <property name="text">
-        <string>3343</string>
+        <string>8</string>
        </property>
       </item>
      </widget>

@@ -1,13 +1,14 @@
 import sys
 
 import PySide6
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget
 from PySide6.QtCore import Qt, QAbstractItemModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 from connection import Data
-from ui_main_side import Ui_MainWindow
-from ui_vistavka_entry import Ui_add_zapis_dialog
+from py_ui.ui_main_side import Ui_MainWindow
+from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
+
 
 class ExponatDBMS(QMainWindow):
     def __init__(self):
@@ -15,7 +16,7 @@ class ExponatDBMS(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.connection = Data()
-
+        self.showMaximized()
         self.current_model = None  # Текущая модель для фильтрации
         self.filter_fields = {}  # Словарь для хранения полей фильтрации для каждого столбца
 
