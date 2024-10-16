@@ -2,8 +2,8 @@ import sys
 
 import PySide6
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
-                               QHBoxLayout, QVBoxLayout, QLabel)
-from PySide6.QtCore import Qt, QAbstractItemModel
+                               QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout)
+from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 from connection import Data
@@ -20,7 +20,14 @@ class ExponatDBMS(QMainWindow):
         self.showMaximized()
         self.current_model = None  # Текущая модель для фильтрации
         self.filter_fields = {}  # Словарь для хранения полей фильтрации для каждого столбца
-        self.ui.toplevel_layout.addWidget(FilterWidget())
+        self.ui.add_filters_cb.currentIndexChanged.connect(self.update_filter_input_field)
+
+        # Initialize the filter input area
+        self.filter_input_layout = QHBoxLayout()  # Layout for the filter input field
+        self.ui.toplevel_layout.addLayout(self.filter_input_layout) # Добавляем его в главный макет
+        self.init_tables()
+        self.ui.tables_menu.triggered.connect(self.set_current_table)
+        self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         # Хранение состояния сортировки для каждой таблицы
         self.sort_states = {
             "vyst_mo_table": {},
@@ -32,19 +39,30 @@ class ExponatDBMS(QMainWindow):
         self.ui.tables_menu.triggered.connect(self.set_current_table)
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
 
+
+
+        self.vyst_mo_proxy_model = QSortFilterProxyModel(self)
+        self.vuz_proxy_model = QSortFilterProxyModel(self)
+        self.grntirub_proxy_model = QSortFilterProxyModel(self)
+        self.svod_proxy_model = QSortFilterProxyModel(self)
+
+        self.current_proxy_model = None  # Текущая прокси-модель для фильтрации
+
+        self.ui.add_filters_cb.currentIndexChanged.connect(self.update_filter_input_field)
+        self.init_tables()
         # Создаем виджет-контейнер для фильтров
-        self.filter_container_widget = QWidget()
-        self.filter_layout = QVBoxLayout(self.filter_container_widget)  # Layout для фильтров
+        # self.filter_container_widget = QWidget()
+        # self.filter_layout = QVBoxLayout(self.filter_container_widget)  # Layout для фильтров
         # self.ui.scrollArea.setWidget(self.filter_container_widget)  # Устанавливаем контейнер в QScrollArea
         # self.ui.scrollArea.setWidgetResizable(True)  # Делаем виджет растягиваемым
 
         # Добавляем combobox для фильтрации
-        self.ui.add_filters_cb.activated.connect(self.add_filter_field)
+        #self.ui.add_filters_cb.activated.connect(self.add_filter_field)
 
-        # # Кнопка для сброса фильтров
-        self.ui.tables_menu.triggered.connect(self.set_current_table)
-        self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
-        self.ui.delete_btn.clicked.connect(self.delete_record)
+        # # # Кнопка для сброса фильтров
+        # self.ui.tables_menu.triggered.connect(self.set_current_table)
+        # self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
+        # self.ui.delete_btn.clicked.connect(self.delete_record)
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
@@ -215,6 +233,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.setModel(self.grntirub_table_model)
         self.ui.svod_table.setModel(self.svod_table_model)
 
+
         # Отключаем сортировку по заголовкам при первом выводе
         self.ui.vyst_mo_table.setSortingEnabled(False)
         self.ui.vuz_table.setSortingEnabled(False)
@@ -261,6 +280,240 @@ class ExponatDBMS(QMainWindow):
             # Устанавливаем автоматическое изменение ширины столбцов
             header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
+    def update_filter_input_field(self):
+        selected_filter = self.ui.add_filters_cb.currentText()
+
+        if selected_filter and selected_filter not in self.filter_fields:
+            # Создаем новое поле для фильтрации
+            new_filter = self.create_filter_input(selected_filter)
+            self.filter_fields[selected_filter] = new_filter  # Сохраняем ссылку на поле
+            self.filter_input_layout.addLayout(new_filter)  # Добавляем в макет
+
+    def create_filter_input(self, label_text):
+        """Создаем QLineEdit (или QComboBox для уникальных значений) и кнопку очистки."""
+        layout = QHBoxLayout()
+
+        # Label
+        label = QLabel(label_text)
+        layout.addWidget(label)
+
+        # Создаем QComboBox для уникальных значений из выбранной колонки
+        combo_box = QComboBox()
+        unique_values = self.get_unique_values_for_column(label_text)
+
+        if unique_values:
+            combo_box.addItems(unique_values)
+        combo_box.setEditable(True)  # Позволяем ручной ввод
+
+        # Связываем действие при вводе значений
+        combo_box.lineEdit().returnPressed.connect(self.apply_filters)
+
+        layout.addWidget(combo_box)
+
+        # Кнопка для очистки фильтра
+        clear_button = QPushButton("✖️")
+        clear_button.setFixedSize(25, 25)
+        clear_button.clicked.connect(lambda: self.remove_filter_input(label_text, layout))
+        layout.addWidget(clear_button)
+
+        return layout
+
+    def get_unique_values_for_column(self, column_name):
+        """Извлекаем уникальные значения для выбранной колонки из текущей модели."""
+        column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
+                        range(self.current_model.columnCount())].index(column_name)
+
+        unique_values = set()
+        for row in range(self.current_model.rowCount()):
+            index = self.current_model.index(row, column_index)
+            value = self.current_model.data(index)
+            if value:
+                unique_values.add(str(value))  # Убедимся, что значения обрабатываются как строки
+
+        return sorted(unique_values)
+
+    # def apply_filters(self):
+    #     """Apply filters based on selected values in the ComboBox inputs."""
+    #     filter_conditions = {}
+    #
+    #     # Проходим по всем полям с фильтрами и собираем их условия
+    #     for filter_key, filter_layout in self.filter_fields.items():
+    #         combo_box = filter_layout.itemAt(1).widget()  # Это поле QComboBox с возможностью ввода
+    #         filter_value = combo_box.currentText()
+    #
+    #         if filter_value:
+    #             # Добавляем условие для фильтрации
+    #             filter_conditions[filter_key] = filter_value
+    #
+    #     # Если нет условий фильтрации, показываем все строки
+    #     if not filter_conditions:
+    #         print("Resetting filters to show all rows")
+    #         for row in range(self.current_model.rowCount()):
+    #             self.ui.vyst_mo_table.showRow(row)
+    #         return  # Выходим, так как фильтры не применяются
+    #
+    #     # Применяем фильтры
+    #     self.filter_table(filter_conditions)
+
+    def apply_filters(self):
+        """Apply filters based on selected values in the ComboBox inputs."""
+        filter_conditions = {}
+
+        # Собираем условия фильтрации
+        for filter_key, filter_layout in self.filter_fields.items():
+            combo_box = filter_layout.itemAt(1).widget()  # QComboBox
+            filter_value = combo_box.currentText()
+            if filter_value:
+                filter_conditions[filter_key] = filter_value
+
+        # Если нет условий фильтрации, показываем все строки
+        if not filter_conditions:
+            self.show_all_rows()
+            return
+
+        # Применяем фильтры к текущей модели
+        self.filter_table(filter_conditions)
+
+    def show_all_rows(self):
+        """Показать все строки в текущей таблице."""
+        for row in range(self.current_model.rowCount()):
+            self.ui.vyst_mo_table.showRow(row)
+            self.ui.vuz_table.showRow(row)
+            self.ui.grntirub_table.showRow(row)
+            self.ui.svod_table.showRow(row)
+
+    # def filter_table(self, filter_conditions):
+    #     """Применяем фильтр ко всем строкам в таблице."""
+    #     for row in range(self.current_model.rowCount()):
+    #         show_row = True  # Флаг для отображения строки
+    #
+    #         for filter_key, filter_value in filter_conditions.items():
+    #             column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
+    #                             range(self.current_model.columnCount())].index(filter_key)
+    #             index = self.current_model.index(row, column_index)
+    #             data_value = self.current_model.data(index)
+    #
+    #             # Проверка на точное совпадение (с учетом регистра)
+    #             if str(data_value) != str(filter_value):
+    #                 show_row = False
+    #                 break
+    #
+    #         if show_row:
+    #             self.ui.vyst_mo_table.showRow(row)
+    #         else:
+    #             self.ui.vyst_mo_table.hideRow(row)
+
+    def filter_table(self, filter_conditions):
+        """Применяем фильтры ко всем строкам в текущей таблице."""
+        for row in range(self.current_model.rowCount()):
+            show_row = True  # Флаг для отображения строки
+
+            for filter_key, filter_value in filter_conditions.items():
+                column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
+                                range(self.current_model.columnCount())].index(filter_key)
+                index = self.current_model.index(row, column_index)
+                data_value = self.current_model.data(index)
+
+                # Проверка на точное совпадение (с учетом регистра)
+                if str(data_value) != str(filter_value):
+                    show_row = False
+                    break
+
+            if show_row:
+                self.show_row_in_all_tables(row, True)
+            else:
+                self.show_row_in_all_tables(row, False)
+
+    def show_row_in_all_tables(self, row, visible):
+        """Показать или скрыть строку во всех таблицах."""
+        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table]:
+            if visible:
+                table.showRow(row)
+            else:
+                table.hideRow(row)
+
+
+
+    # def remove_filter_input(self, label_text, layout):
+    #     """Удаляем поле ввода фильтра и сбрасываем фильтрацию по этой колонке."""
+    #     if label_text in self.filter_fields:
+    #         for i in reversed(range(layout.count())):
+    #             widget = layout.itemAt(i).widget()
+    #             if widget:
+    #                 widget.deleteLater()
+    #
+    #         del self.filter_fields[label_text]
+    #         self.apply_filters()  # Применяем фильтры заново
+
+    def remove_filter_input(self, label_text, layout):
+        """Удаляем поле ввода фильтра и сбрасываем фильтрацию по этой колонке."""
+        if label_text in self.filter_fields:
+            for i in reversed(range(layout.count())):
+                widget = layout.itemAt(i).widget()
+                if widget:
+                    widget.deleteLater()
+
+            del self.filter_fields[label_text]
+            self.apply_filters()  # Применяем фильтры заново
+
+    # def clear_all_filters(self):
+    #     """Сбрасываем все фильтры и показываем все строки."""
+    #     for row in range(self.current_model.rowCount()):
+    #         self.ui.vyst_mo_table.showRow(row)
+    #
+    #     # Очистка всех полей фильтров
+    #     for filter_key, layout in self.filter_fields.items():
+    #         while layout.count():
+    #             item = layout.takeAt(0)
+    #             widget = item.widget()
+    #             if widget:
+    #                 widget.deleteLater()
+    #
+    #     self.filter_fields.clear()
+
+    def clear_all_filters(self):
+        """Сбрасываем все фильтры и показываем все строки во всех таблицах."""
+        self.show_all_rows()
+        self.filter_fields.clear()  # Сбросить поля фильтров
+
+        # Очистить все QComboBox
+        for filter_key, layout in self.filter_fields.items():
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+
+    def create_model(self, table_name: str):
+        model = QSqlTableModel(self)
+        model.setEditStrategy(QSqlTableModel.OnManualSubmit)
+        model.setTable(table_name)
+        model.select()
+        return model
+
+    # def apply_filters(self):
+    #     filter_conditions = []
+    #     for filter_key, filter_layout in self.filter_fields.items():
+    #         input_field = filter_layout.itemAt(1).widget()
+    #         filter_value = input_field.text()
+    #         if filter_value:
+    #             filter_conditions.append(f"{filter_key} LIKE '%{filter_value}%'")
+    #
+    #     if filter_conditions:
+    #         self.current_model.setFilter(" AND ".join(filter_conditions))
+    #     else:
+    #         self.current_model.setFilter("")
+
+    def update_filter_combobox(self):
+        """Updates the ComboBox with currently active filters."""
+        self.ui.add_filters_cb.clear()
+        if self.current_model:
+            headers = [self.current_model.headerData(i, Qt.Horizontal) for i in range(self.current_model.columnCount())]
+            # Exclude currently selected filters
+            for filter_key in self.filter_fields.keys():
+                headers.remove(filter_key)
+            self.ui.add_filters_cb.addItems(headers)
+
     def create_model(self, table_name: str):
         model = NonEditableSqlTableModel(self)
         model.setEditStrategy(QSqlTableModel.OnManualSubmit)
@@ -273,6 +526,15 @@ class ExponatDBMS(QMainWindow):
             model.setHeaderData(index, Qt.Horizontal, header)
 
     def set_current_table(self, checked_action):
+        """Switches the current table and resets the filters."""
+        # Reset filters and clear the input layout
+        self.filter_fields.clear()
+        while self.filter_input_layout.count():
+            child = self.filter_input_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+
+        # Switch the table
         text = checked_action.text()
         if text == "ГРНТИ":
             self.ui.db_tables.setCurrentIndex(3)
@@ -287,13 +549,11 @@ class ExponatDBMS(QMainWindow):
             self.ui.db_tables.setCurrentIndex(0)
             self.current_model = self.svod_table_model
 
+        # Update the ComboBox with available columns
         self.update_filter_combobox()
 
-    def update_filter_combobox(self):
-        self.ui.add_filters_cb.clear()
-        if self.current_model:
-            headers = [self.current_model.headerData(i, Qt.Orientation.Horizontal) for i in range(self.current_model.columnCount())]
-            self.ui.add_filters_cb.addItems(headers)
+
+
 
     def handle_header_click(self, table, logicalIndex):
         # Получаем имя таблицы для правильного отслеживания состояния
@@ -317,161 +577,12 @@ class ExponatDBMS(QMainWindow):
             model.select()  # Перезагружаем данные в исходном порядке
             self.sort_states[table_name][logicalIndex] = None
 
-    def add_filter_field(self):
-        selected_column = self.ui.add_filters_cb.currentText()
-
-        if selected_column not in self.filter_fields:
-            filter_layout = QVBoxLayout()
-            label = QLabel(f"Фильтр по {selected_column}:")
-            filter_input = QLineEdit()
-            apply_filter_btn = QPushButton("Применить фильтр")
-
-            apply_filter_btn.clicked.connect(lambda: self.apply_filter(selected_column, filter_input.text(), filter_layout))
-
-            filter_layout.addWidget(label)
-            filter_layout.addWidget(filter_input)
-            filter_layout.addWidget(apply_filter_btn)
-
-            # Добавляем кнопку для удаления фильтра
-            remove_filter_btn = QPushButton("Удалить фильтр")
-            remove_filter_btn.clicked.connect(lambda: self.remove_filter(selected_column, filter_layout))
-            filter_layout.addWidget(remove_filter_btn)
-
-            self.filter_layout.addLayout(filter_layout)
-            self.filter_fields[selected_column] = (filter_input, filter_layout)
-
-    def apply_filter(self, column, value, layout):
-        if self.current_model:
-            column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in range(self.current_model.columnCount())].index(column)
-            filter_str = f"{self.current_model.record().fieldName(column_index)} LIKE '%{value}%'"
-            self.current_model.setFilter(filter_str)
-
-            # Обновляем все фильтры
-            self.update_all_filters()
-
-    def remove_filter(self, column, layout):
-        if self.current_model and column in self.filter_fields:
-            # Удаляем фильтр из модели
-            self.filter_fields[column][0].clear()  # Очищаем поле ввода
-            column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in range(self.current_model.columnCount())].index(column)
-            self.current_model.setFilter("")  # Сбрасываем фильтр для текущей модели
-
-            # Удаляем layout с фильтром
-            filter_layout = self.filter_fields[column][1]
-            while filter_layout.count():
-                item = filter_layout.takeAt(0)  # Удаляем виджет из компоновки
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()  # Удаляем виджет
-
-            del self.filter_fields[column]  # Удаляем запись о фильтре из словаря
-
-            # Обновляем все фильтры
-            self.update_all_filters()
-
-    def update_all_filters(self):
-        combined_filter = []
-        for column, (input_field, _) in self.filter_fields.items():
-            value = input_field.text()
-            if value:
-                column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in range(self.current_model.columnCount())].index(column)
-                filter_str = f"{self.current_model.record().fieldName(column_index)} LIKE '%{value}%'"
-                combined_filter.append(filter_str)
-
-        # Обновляем фильтр в модели
-        if combined_filter:
-            self.current_model.setFilter(" AND ".join(combined_filter))
-        else:
-            self.current_model.setFilter("")
 
 class NonEditableSqlTableModel(QSqlTableModel):
     def flags(self, index):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
 
-class FilterWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        # Создаем основной макет
-        main_layout = QVBoxLayout(self)
-
-        # Строка 1: Номер, Ответственный, Шифр
-        row1_layout = QHBoxLayout()
-
-        # Фильтр "Номер"
-        number_filter = self.create_filter("Номер")
-        row1_layout.addLayout(number_filter)
-
-        # Фильтр "Ответственный"
-        responsible_filter = self.create_filter("Ответственный")
-        row1_layout.addLayout(responsible_filter)
-
-        # Фильтр "Шифр"
-        code_filter = self.create_filter("Шифр")
-        row1_layout.addLayout(code_filter)
-
-        # Добавляем первую строку фильтров в основной макет
-        main_layout.addLayout(row1_layout)
-
-        # Строка 2: Комментарий, Описание, Статус
-        row2_layout = QHBoxLayout()
-
-        # Фильтр "Комментарий"
-        comment_filter = self.create_filter("Комментарий")
-        row2_layout.addLayout(comment_filter)
-
-        # Фильтр "Описание"
-        description_filter = self.create_filter("Описание")
-        row2_layout.addLayout(description_filter)
-
-        # Фильтр "Статус" с выпадающим списком
-        status_filter = self.create_combobox_filter("Статус", ["Процесс", "Готово", "Отложено"])
-        row2_layout.addLayout(status_filter)
-
-        # Добавляем вторую строку фильтров в основной макет
-        main_layout.addLayout(row2_layout)
-
-    def create_filter(self, label_text):
-        """Создает QLineEdit с кнопкой очистки (крестиком)"""
-        layout = QHBoxLayout()
-
-        # Метка
-        label = QLabel(label_text)
-        layout.addWidget(label)
-
-        # Поле для ввода
-        line_edit = QLineEdit()
-        layout.addWidget(line_edit)
-
-        # Кнопка сброса
-        clear_button = QPushButton("✖️")
-        clear_button.setFixedSize(25, 25)
-        clear_button.clicked.connect(line_edit.clear)
-        layout.addWidget(clear_button)
-
-        return layout
-
-    def create_combobox_filter(self, label_text, items):
-        """Создает QComboBox с кнопкой очистки"""
-        layout = QHBoxLayout()
-
-        # Метка
-        label = QLabel(label_text)
-        layout.addWidget(label)
-
-        # Выпадающий список
-        combo_box = QComboBox()
-        combo_box.addItems(items)
-        layout.addWidget(combo_box)
-
-        # Кнопка сброса
-        clear_button = QPushButton("✖️")
-        clear_button.setFixedSize(25, 25)
-        clear_button.clicked.connect(lambda: combo_box.setCurrentIndex(-1))
-        layout.addWidget(clear_button)
-
-        return layout
 
 
 if __name__ == '__main__':
@@ -479,3 +590,4 @@ if __name__ == '__main__':
     window = ExponatDBMS()
     window.show()
     sys.exit(app.exec())
+
