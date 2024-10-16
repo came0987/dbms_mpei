@@ -22,9 +22,6 @@ class ExponatDBMS(QMainWindow):
         self.ui.add_filters_cb.currentIndexChanged.connect(self.update_filter_input_field)
         self.ui.delete_all_filters.clicked.connect(self.clear_all_filters)
 
-        # Initialize the filter input area
-        # self.filter_input_layout = QHBoxLayout()  # Layout for the filter input field
-        # self.ui.toplevel_layout.addLayout(self.filter_input_layout) # Добавляем его в главный макет
         self.filter_input_layout = QGridLayout()  # Layout for the filter input field
         self.ui.toplevel_layout.addLayout(self.filter_input_layout)  # Добавляем его в главный макет
 
@@ -276,6 +273,7 @@ class ExponatDBMS(QMainWindow):
             lambda index: self.handle_header_click(self.ui.svod_table, index)
         )
 
+
         # Устанавливаем режим растягивания заголовков
         for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table]:
             header = table.horizontalHeader()
@@ -373,27 +371,6 @@ class ExponatDBMS(QMainWindow):
 
         return sorted(unique_values)
 
-    # def apply_filters(self):
-    #     """Apply filters based on selected values in the ComboBox inputs."""
-    #     filter_conditions = {}
-    #
-    #     # Gather filter conditions from the filter fields
-    #     for filter_key, filter_layout in self.filter_fields.items():
-    #         combo_box = filter_layout.itemAt(1).widget()  # This is the QComboBox with editable input
-    #         filter_value = combo_box.currentText()
-    #
-    #         if filter_value:
-    #             # Split values in case of multiple inputs (e.g., by commas)
-    #             filter_values = [val.strip() for val in filter_value.split(',') if val.strip()]
-    #             filter_conditions[filter_key] = filter_values
-    #
-    #     # If there are no filter conditions, reset the filters
-    #     if not filter_conditions:
-    #         self.show_all_rows()  # Show all rows in all tables
-    #         return  # Exit since no filters are applied
-    #
-    #     # Apply filters to the current model and show rows accordingly
-    #     self.filter_table(filter_conditions)
     def apply_filters(self):
         """Apply filters based on selected values in the ComboBox inputs."""
         filter_conditions = {}
@@ -411,34 +388,6 @@ class ExponatDBMS(QMainWindow):
         # Apply filters to the current model and show rows accordingly
         self.filter_table(filter_conditions)
 
-    # def filter_table(self, filter_conditions):
-    #     """Apply filters to the currently selected table."""
-    #     # Create a set of rows to hide
-    #     rows_to_hide = set()
-    #
-    #     for row in range(self.current_model.rowCount()):
-    #         show_row = True  # Flag to determine if the row should be shown
-    #
-    #         for filter_key, filter_values in filter_conditions.items():
-    #             column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
-    #                             range(self.current_model.columnCount())].index(filter_key)
-    #             index = self.current_model.index(row, column_index)
-    #             data_value = self.current_model.data(index)
-    #
-    #             # Check if the value matches any of the filter values
-    #             if str(data_value) not in filter_values:
-    #                 show_row = False
-    #                 break
-    #
-    #         if not show_row:
-    #             rows_to_hide.add(row)  # Mark row for hiding
-    #
-    #     # Show or hide rows in all tables based on the filter results
-    #     for row in range(self.current_model.rowCount()):
-    #         if row in rows_to_hide:
-    #             self.show_row_in_all_tables(row, False)  # Hide row in all tables
-    #         else:
-    #             self.show_row_in_all_tables(row, True)  # Show row in all tables
     def filter_table(self, filter_conditions):
         """Apply filters to the currently selected table."""
         rows_to_hide = set()
@@ -503,16 +452,6 @@ class ExponatDBMS(QMainWindow):
             else:
                 table.hideRow(row)
 
-    # def remove_filter_input(self, label_text, layout):
-    #     """Удаляем поле ввода фильтра и сбрасываем фильтрацию по этой колонке."""
-    #     if label_text in self.filter_fields:
-    #         for i in reversed(range(layout.count())):
-    #             widget = layout.itemAt(i).widget()
-    #             if widget:
-    #                 widget.deleteLater()
-    #
-    #         del self.filter_fields[label_text]
-    #         self.apply_filters()  # Применяем фильтры заново
     def remove_filter_input(self, label_text, layout):
         """Удаляем поле ввода фильтра и сбрасываем фильтрацию только для этой колонки."""
         if label_text in self.filter_fields:
@@ -624,7 +563,9 @@ class ExponatDBMS(QMainWindow):
         # Очищаем словарь фильтров
         self.filter_fields.clear()
 
+
     def handle_header_click(self, table, logicalIndex):
+        """Handles the header click to sort the table."""
         # Получаем имя таблицы для правильного отслеживания состояния
         table_name = table.objectName()
 
@@ -636,13 +577,15 @@ class ExponatDBMS(QMainWindow):
 
         # Устанавливаем следующее состояние сортировки
         if current_sort_order is None:
-            model.sort(logicalIndex, Qt.AscendingOrder)
-            self.sort_states[table_name][logicalIndex] = Qt.AscendingOrder
-        elif current_sort_order == Qt.AscendingOrder:
-            model.sort(logicalIndex, Qt.DescendingOrder)
-            self.sort_states[table_name][logicalIndex] = Qt.DescendingOrder
+            model.sort(logicalIndex, Qt.SortOrder.AscendingOrder)
+
+            self.sort_states[table_name][logicalIndex] = Qt.SortOrder.AscendingOrder
+        elif current_sort_order == Qt.SortOrder.AscendingOrder:
+            model.sort(logicalIndex, Qt.SortOrder.DescendingOrder)
+
+            self.sort_states[table_name][logicalIndex] = Qt.SortOrder.DescendingOrder
         else:
-            model.setSort(-1, Qt.AscendingOrder)  # Сбрасываем сортировку
+            model.setSort(-1, Qt.SortOrder.AscendingOrder)  # Сбрасываем сортировку
             model.select()  # Перезагружаем данные в исходном порядке
             self.sort_states[table_name][logicalIndex] = None
 

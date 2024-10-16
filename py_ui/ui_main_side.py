@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -128,7 +128,7 @@ class Ui_MainWindow(object):
         self.db_tables.addWidget(self.grntirub)
         self.layoutWidget1 = QWidget(self.menu_tables_page)
         self.layoutWidget1.setObjectName(u"layoutWidget1")
-        self.layoutWidget1.setGeometry(QRect(11, 10, 1081, 67))
+        self.layoutWidget1.setGeometry(QRect(11, -4, 1081, 111))
         self.toplevel_layout = QHBoxLayout(self.layoutWidget1)
         self.toplevel_layout.setObjectName(u"toplevel_layout")
         self.toplevel_layout.setContentsMargins(0, 0, 0, 0)
@@ -137,19 +137,24 @@ class Ui_MainWindow(object):
         self.verticalLayout.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
         self.add_filters_cb = QComboBox(self.layoutWidget1)
         self.add_filters_cb.setObjectName(u"add_filters_cb")
+        self.add_filters_cb.setMinimumSize(QSize(180, 0))
+        self.add_filters_cb.setMaximumSize(QSize(180, 16777215))
         font = QFont()
         font.setPointSize(12)
         self.add_filters_cb.setFont(font)
         self.add_filters_cb.setEditable(False)
         self.add_filters_cb.setMinimumContentsLength(2)
 
-        self.verticalLayout.addWidget(self.add_filters_cb)
+        self.verticalLayout.addWidget(self.add_filters_cb, 0, Qt.AlignmentFlag.AlignLeft)
 
         self.delete_all_filters = QPushButton(self.layoutWidget1)
         self.delete_all_filters.setObjectName(u"delete_all_filters")
+        self.delete_all_filters.setEnabled(True)
+        self.delete_all_filters.setMinimumSize(QSize(180, 0))
+        self.delete_all_filters.setMaximumSize(QSize(180, 16777215))
         self.delete_all_filters.setFont(font)
 
-        self.verticalLayout.addWidget(self.delete_all_filters)
+        self.verticalLayout.addWidget(self.delete_all_filters, 0, Qt.AlignmentFlag.AlignLeft)
 
 
         self.toplevel_layout.addLayout(self.verticalLayout)
