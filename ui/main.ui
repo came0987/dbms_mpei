@@ -142,9 +142,9 @@
         <property name="geometry">
          <rect>
           <x>11</x>
-          <y>10</y>
+          <y>-4</y>
           <width>1081</width>
-          <height>67</height>
+          <height>111</height>
          </rect>
         </property>
         <layout class="QHBoxLayout" name="toplevel_layout">
@@ -153,8 +153,20 @@
            <property name="sizeConstraint">
             <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
            </property>
-           <item>
+           <item alignment="Qt::AlignmentFlag::AlignLeft">
             <widget class="QComboBox" name="add_filters_cb">
+             <property name="minimumSize">
+              <size>
+               <width>180</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>180</width>
+               <height>16777215</height>
+              </size>
+             </property>
              <property name="font">
               <font>
                <pointsize>12</pointsize>
@@ -171,8 +183,23 @@
              </property>
             </widget>
            </item>
-           <item>
+           <item alignment="Qt::AlignmentFlag::AlignLeft">
             <widget class="QPushButton" name="delete_all_filters">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>180</width>
+               <height>0</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>180</width>
+               <height>16777215</height>
+              </size>
+             </property>
              <property name="font">
               <font>
                <pointsize>12</pointsize>
