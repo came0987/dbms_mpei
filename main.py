@@ -2,13 +2,14 @@ import sys
 
 import PySide6
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
-                               QHBoxLayout, QVBoxLayout, QLabel)
+                               QHBoxLayout, QVBoxLayout, QLabel, QMessageBox, QDialog)
 from PySide6.QtCore import Qt, QAbstractItemModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 from connection import Data
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
+from py_ui.ui_cancel_confirm import Ui_Dialog
 
 
 class ExponatDBMS(QMainWindow):
@@ -44,13 +45,14 @@ class ExponatDBMS(QMainWindow):
         # # Кнопка для сброса фильтров
         self.ui.tables_menu.triggered.connect(self.set_current_table)
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
-        self.ui.delete_btn.clicked.connect(self.delete_record)
+        self.ui.delete_btn.clicked.connect(self.delete_button_action)
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_entry_dialog = Ui_add_zapis_dialog()
         self.ui_create_entry_dialog.setupUi(self.new_dialog)
         self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_entry)
+        self.new_dialog.setModal(True)
         self.new_dialog.show()
 
     def create_entry(self):
@@ -122,23 +124,59 @@ class ExponatDBMS(QMainWindow):
 
         self.new_dialog.close()
 
+    def open_confirm_dialog(self, selected_row):
+        self.confirm_dialog = QDialog()  # Теперь должно работать
+        self.ui_confirm_dialog = Ui_Dialog()
+        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+   # Устанавливаем текст в QLabel
+        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+    
+    # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(selected_row))
+    
+    # Подключаем кнопку "Cancel" для закрытия диалога
+        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+        self.confirm_dialog.exec_()
+        self.confirm_dialog.setModal(True)
 
-    def delete_record(self):
-        current_table: QTableView = self.ui.db_tables.currentWidget().children()[0]
-        # index = current_table.selectedIndexes()[0]
-        # # selected = current_table.currentIndex()
-        # if len(index) != 0:
-        #     for i in range(len(index)):
-        #         current_table.removeRow(i)
-        #     current_table.submitAll()
-        #     current_table.select()
+    def delete_button_action(self):
+        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
+        if current_widget is not None:  # Проверяем, что текущий виджет существует
+            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
 
-        selected = current_table.currentIndex()
-        model: QAbstractItemModel = current_table.model()
-        if selected.row() != -1:
-            model.removeRow(selected.row())
-            model.submitAll()
-            model.select()
+            if isinstance(current_table, QTableView):
+                selected_row = current_table.selectionModel().currentIndex().row()
+
+                if selected_row >= 0:  # Проверяем, что строка выделена
+                    self.open_confirm_dialog(selected_row)  # Передаем номер строки
+                else:
+                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
+            else:
+                QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
+        else:
+            QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
+
+    def delete_record(self, selected_row):
+    # Получаем текущий виджет QTableView
+        current_table = self.ui.db_tables.currentWidget().children()[1]
+
+        if isinstance(current_table, QTableView):
+            model = current_table.model()  # Получаем модель таблицы
+            model.removeRow(selected_row)  # Удаляем строку
+            model.submitAll()  # Применяем изменения
+            model.select()  # Обновляем данные в таблице
+
+        self.confirm_dialog.close()  # Закрываем диалог
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.connection.close_all_windows()
+            event.accept()
+        else:
+            event.ignore()
 
     def get_value_by_key(self, model, key_value, key_column=0, target_column=1):
         """
@@ -222,22 +260,22 @@ class ExponatDBMS(QMainWindow):
         self.ui.svod_table.setSortingEnabled(False)
 
         # Настройка заголовков
-        self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа/организации",
-                                                  "Признак  формы НИР", "Регистрационный номер НИР", "Наименование проекта/НИР",
-                                                  "Коды  ГРНТИ", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
-                                                  "Признак", "Выставки", "Название выставочного экспоната"])
+        self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа",
+                                                  "Пр-к  ф. НИР", "Рег. ном. НИР", "Наименование НИР",
+                                                  "Коды  ГРНТИ", "Руководитель НИР", "Долж., Уч.З, Уч.Ст",
+                                                  "Пр-к", "Выставки", "Выставочный экспонат"])
 
-        self.set_custom_headers(self.vuz_table_model, ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокращенное наименование",
-                                               "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"])
+        self.set_custom_headers(self.vuz_table_model, ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокр. наим.",
+                                               "Федеральный округ", 'Город', "Статус", "№ обл.", "Область", "Категория", "Профиль"])
 
         self.set_custom_headers(self.grntirub_table_model, ["Код рубрики", "Наименование рубрики"])
-        self.set_custom_headers(self.svod_table_model, ["Код ВУЗа/организации", "Название ВУЗа", "Полное наименование", "Сокращенное наименование",
-                                               "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль",
-                                                        "Признак  формы НИР", "Регистрационный номер НИР",
-                                                        "Наименование проекта/НИР",
+        self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокр. наим.",
+                                               "Федеральный округ", 'Город', "Статус", "№ обл.", "Область", "Категория", "Профиль",
+                                                        "Пр-к  ф. НИР", "Рег. ном. НИР",
+                                                        "Наименование НИР",
                                                         "Коды  ГРНТИ", "Руководитель НИР",
-                                                        "Должность, ученое звание, ученая степень руководителя",
-                                                        "Признак", "Выставки", "Название выставочного экспоната"
+                                                        "Долж., Уч.З, Уч.Ст",
+                                                        "Пр-к", "Выставки", "Выставочный экспонат"
                                                         ])
 
         # Подключаем сортировку для каждой таблицы
