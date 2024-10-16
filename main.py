@@ -1,4 +1,5 @@
 import sys
+
 import PySide6
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
                                QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout)
@@ -280,6 +281,8 @@ class ExponatDBMS(QMainWindow):
             header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             # Устанавливаем автоматическое изменение ширины столбцов
             header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+
+        self.ui.vyst_mo_table.setColumnHidden(10, True)
 
     def update_filter_input_field(self):
         selected_filter = self.ui.add_filters_cb.currentText()
