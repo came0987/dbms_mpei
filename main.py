@@ -332,118 +332,70 @@ class ExponatDBMS(QMainWindow):
 
         return sorted(unique_values)
 
-    # def apply_filters(self):
-    #     """Apply filters based on selected values in the ComboBox inputs."""
-    #     filter_conditions = {}
-    #
-    #     # Проходим по всем полям с фильтрами и собираем их условия
-    #     for filter_key, filter_layout in self.filter_fields.items():
-    #         combo_box = filter_layout.itemAt(1).widget()  # Это поле QComboBox с возможностью ввода
-    #         filter_value = combo_box.currentText()
-    #
-    #         if filter_value:
-    #             # Добавляем условие для фильтрации
-    #             filter_conditions[filter_key] = filter_value
-    #
-    #     # Если нет условий фильтрации, показываем все строки
-    #     if not filter_conditions:
-    #         print("Resetting filters to show all rows")
-    #         for row in range(self.current_model.rowCount()):
-    #             self.ui.vyst_mo_table.showRow(row)
-    #         return  # Выходим, так как фильтры не применяются
-    #
-    #     # Применяем фильтры
-    #     self.filter_table(filter_conditions)
-
     def apply_filters(self):
         """Apply filters based on selected values in the ComboBox inputs."""
         filter_conditions = {}
 
-        # Собираем условия фильтрации
+        # Gather filter conditions from the filter fields
         for filter_key, filter_layout in self.filter_fields.items():
-            combo_box = filter_layout.itemAt(1).widget()  # QComboBox
+            combo_box = filter_layout.itemAt(1).widget()  # This is the QComboBox with editable input
             filter_value = combo_box.currentText()
+
             if filter_value:
-                filter_conditions[filter_key] = filter_value
+                # Split values in case of multiple inputs (e.g., by commas)
+                filter_values = [val.strip() for val in filter_value.split(',') if val.strip()]
+                filter_conditions[filter_key] = filter_values
 
-        # Если нет условий фильтрации, показываем все строки
+        # If there are no filter conditions, reset the filters
         if not filter_conditions:
-            self.show_all_rows()
-            return
+            self.show_all_rows()  # Show all rows in all tables
+            return  # Exit since no filters are applied
 
-        # Применяем фильтры к текущей модели
+        # Apply filters to the current model and show rows accordingly
         self.filter_table(filter_conditions)
 
-    def show_all_rows(self):
-        """Показать все строки в текущей таблице."""
-        for row in range(self.current_model.rowCount()):
-            self.ui.vyst_mo_table.showRow(row)
-            self.ui.vuz_table.showRow(row)
-            self.ui.grntirub_table.showRow(row)
-            self.ui.svod_table.showRow(row)
-
-    # def filter_table(self, filter_conditions):
-    #     """Применяем фильтр ко всем строкам в таблице."""
-    #     for row in range(self.current_model.rowCount()):
-    #         show_row = True  # Флаг для отображения строки
-    #
-    #         for filter_key, filter_value in filter_conditions.items():
-    #             column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
-    #                             range(self.current_model.columnCount())].index(filter_key)
-    #             index = self.current_model.index(row, column_index)
-    #             data_value = self.current_model.data(index)
-    #
-    #             # Проверка на точное совпадение (с учетом регистра)
-    #             if str(data_value) != str(filter_value):
-    #                 show_row = False
-    #                 break
-    #
-    #         if show_row:
-    #             self.ui.vyst_mo_table.showRow(row)
-    #         else:
-    #             self.ui.vyst_mo_table.hideRow(row)
 
     def filter_table(self, filter_conditions):
-        """Применяем фильтры ко всем строкам в текущей таблице."""
-        for row in range(self.current_model.rowCount()):
-            show_row = True  # Флаг для отображения строки
+        """Apply filters to the currently selected table."""
+        # Create a set of rows to hide
+        rows_to_hide = set()
 
-            for filter_key, filter_value in filter_conditions.items():
+        for row in range(self.current_model.rowCount()):
+            show_row = True  # Flag to determine if the row should be shown
+
+            for filter_key, filter_values in filter_conditions.items():
                 column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
                                 range(self.current_model.columnCount())].index(filter_key)
                 index = self.current_model.index(row, column_index)
                 data_value = self.current_model.data(index)
 
-                # Проверка на точное совпадение (с учетом регистра)
-                if str(data_value) != str(filter_value):
+                # Check if the value matches any of the filter values
+                if str(data_value) not in filter_values:
                     show_row = False
                     break
 
-            if show_row:
-                self.show_row_in_all_tables(row, True)
+            if not show_row:
+                rows_to_hide.add(row)  # Mark row for hiding
+
+        # Show or hide rows in all tables based on the filter results
+        for row in range(self.current_model.rowCount()):
+            if row in rows_to_hide:
+                self.show_row_in_all_tables(row, False)  # Hide row in all tables
             else:
-                self.show_row_in_all_tables(row, False)
+                self.show_row_in_all_tables(row, True)  # Show row in all tables
+
+    def show_all_rows(self):
+        """Show all rows in the current table."""
+        for row in range(self.current_model.rowCount()):
+            self.show_row_in_all_tables(row, True)  # Show row in all tables
 
     def show_row_in_all_tables(self, row, visible):
-        """Показать или скрыть строку во всех таблицах."""
+        """Show or hide a row in all tables."""
         for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table]:
             if visible:
                 table.showRow(row)
             else:
                 table.hideRow(row)
-
-
-
-    # def remove_filter_input(self, label_text, layout):
-    #     """Удаляем поле ввода фильтра и сбрасываем фильтрацию по этой колонке."""
-    #     if label_text in self.filter_fields:
-    #         for i in reversed(range(layout.count())):
-    #             widget = layout.itemAt(i).widget()
-    #             if widget:
-    #                 widget.deleteLater()
-    #
-    #         del self.filter_fields[label_text]
-    #         self.apply_filters()  # Применяем фильтры заново
 
     def remove_filter_input(self, label_text, layout):
         """Удаляем поле ввода фильтра и сбрасываем фильтрацию по этой колонке."""
@@ -455,21 +407,6 @@ class ExponatDBMS(QMainWindow):
 
             del self.filter_fields[label_text]
             self.apply_filters()  # Применяем фильтры заново
-
-    # def clear_all_filters(self):
-    #     """Сбрасываем все фильтры и показываем все строки."""
-    #     for row in range(self.current_model.rowCount()):
-    #         self.ui.vyst_mo_table.showRow(row)
-    #
-    #     # Очистка всех полей фильтров
-    #     for filter_key, layout in self.filter_fields.items():
-    #         while layout.count():
-    #             item = layout.takeAt(0)
-    #             widget = item.widget()
-    #             if widget:
-    #                 widget.deleteLater()
-    #
-    #     self.filter_fields.clear()
 
     def clear_all_filters(self):
         """Сбрасываем все фильтры и показываем все строки во всех таблицах."""
@@ -490,19 +427,6 @@ class ExponatDBMS(QMainWindow):
         model.setTable(table_name)
         model.select()
         return model
-
-    # def apply_filters(self):
-    #     filter_conditions = []
-    #     for filter_key, filter_layout in self.filter_fields.items():
-    #         input_field = filter_layout.itemAt(1).widget()
-    #         filter_value = input_field.text()
-    #         if filter_value:
-    #             filter_conditions.append(f"{filter_key} LIKE '%{filter_value}%'")
-    #
-    #     if filter_conditions:
-    #         self.current_model.setFilter(" AND ".join(filter_conditions))
-    #     else:
-    #         self.current_model.setFilter("")
 
     def update_filter_combobox(self):
         """Updates the ComboBox with currently active filters."""
@@ -551,7 +475,7 @@ class ExponatDBMS(QMainWindow):
 
         # Update the ComboBox with available columns
         self.update_filter_combobox()
-
+        self.show_all_rows()  # Ensure all rows are visible when switching tables
 
 
 
