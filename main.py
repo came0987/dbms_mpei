@@ -324,6 +324,39 @@ class ExponatDBMS(QMainWindow):
             col = index % filters_per_row
             self.filter_input_layout.addLayout(filter_layout, row, col)
 
+    # def create_filter_input(self, label_text):
+    #     """Создаем QLineEdit (или QComboBox для уникальных значений) и кнопку очистки."""
+    #     layout = QHBoxLayout()
+    #
+    #     # Label
+    #     label = QLabel(label_text)
+    #     layout.addWidget(label)
+    #
+    #     # Создаем QComboBox для уникальных значений из выбранной колонки
+    #     combo_box = QComboBox()
+    #     unique_values = self.get_unique_values_for_column(label_text)
+    #
+    #     if unique_values:
+    #         combo_box.addItems(unique_values)
+    #     combo_box.setEditable(True)  # Позволяем ручной ввод
+    #
+    #     # Связываем действие при вводе значений
+    #     combo_box.lineEdit().returnPressed.connect(self.apply_filters)
+    #
+    #     layout.addWidget(combo_box)
+    #
+    #     # Кнопка для очистки фильтра
+    #     clear_button = QPushButton("✖️")
+    #     clear_button.setFixedSize(25, 25)
+    #     clear_button.clicked.connect(lambda: self.remove_filter_input(label_text, layout))
+    #     layout.addWidget(clear_button)
+    #
+    #     # Добавляем отступы для улучшения внешнего вида
+    #     layout.setContentsMargins(5, 5, 5, 5)
+    #     layout.setSpacing(10)
+    #
+    #     return layout
+
     def create_filter_input(self, label_text):
         """Создаем QLineEdit (или QComboBox для уникальных значений) и кнопку очистки."""
         layout = QHBoxLayout()
@@ -338,7 +371,12 @@ class ExponatDBMS(QMainWindow):
 
         if unique_values:
             combo_box.addItems(unique_values)
+
         combo_box.setEditable(True)  # Позволяем ручной ввод
+        combo_box.setCurrentText("")  # Устанавливаем пустое значение по умолчанию
+
+        # Устанавливаем подсказку в поле ввода
+        combo_box.lineEdit().setPlaceholderText("вводите через запятую")
 
         # Связываем действие при вводе значений
         combo_box.lineEdit().returnPressed.connect(self.apply_filters)
@@ -565,7 +603,6 @@ class ExponatDBMS(QMainWindow):
 
 
     def handle_header_click(self, table, logicalIndex):
-        """Handles the header click to sort the table."""
         # Получаем имя таблицы для правильного отслеживания состояния
         table_name = table.objectName()
 
