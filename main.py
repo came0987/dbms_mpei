@@ -261,6 +261,8 @@ class ExponatDBMS(QMainWindow):
             # Устанавливаем автоматическое изменение ширины столбцов
             header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
+        self.ui.vyst_mo_table.setColumnHidden(10, True)
+
     def create_model(self, table_name: str):
         model = NonEditableSqlTableModel(self)
         model.setEditStrategy(QSqlTableModel.OnManualSubmit)
