@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>613</width>
-    <height>588</height>
+    <width>561</width>
+    <height>664</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,9 +16,9 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>110</x>
+     <x>90</x>
      <y>10</y>
-     <width>341</width>
+     <width>381</width>
      <height>31</height>
     </rect>
    </property>
@@ -37,8 +37,8 @@
   <widget class="QPushButton" name="save_btn">
    <property name="geometry">
     <rect>
-     <x>9</x>
-     <y>532</y>
+     <x>10</x>
+     <y>620</y>
      <width>121</width>
      <height>31</height>
     </rect>
@@ -52,87 +52,12 @@
     <string>Сохранить</string>
    </property>
   </widget>
-  <widget class="QComboBox" name="exponat_est">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>437</y>
-     <width>165</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="placeholderText">
-    <string>Наличие экспоната</string>
-   </property>
-   <item>
-    <property name="text">
-     <string>Есть</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Планируется</string>
-    </property>
-   </item>
-   <item>
-    <property name="text">
-     <string>Нет</string>
-    </property>
-   </item>
-  </widget>
-  <widget class="QLineEdit" name="exponat_name">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>502</y>
-     <width>149</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="placeholderText">
-    <string>Наименование Экспоната</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="vistavka">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>470</y>
-     <width>149</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>12</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="placeholderText">
-    <string>Выставка</string>
-   </property>
-  </widget>
-  <widget class="QWidget" name="">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>40</y>
-     <width>271</width>
+     <y>50</y>
+     <width>541</width>
      <height>53</height>
     </rect>
    </property>
@@ -169,73 +94,33 @@
   <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>100</y>
-     <width>182</width>
-     <height>53</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_3">
-    <item>
-     <widget class="QLabel" name="label_3">
-      <property name="font">
-       <font>
-        <pointsize>10</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Признак формы НИР</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QComboBox" name="priznak">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="placeholderText">
-       <string>Признак формы НИР</string>
-      </property>
-      <item>
-       <property name="text">
-        <string>Е</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>М</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="">
-   <property name="geometry">
-    <rect>
      <x>10</x>
-     <y>210</y>
-     <width>151</width>
-     <height>52</height>
+     <y>470</y>
+     <width>271</width>
+     <height>61</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_4">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QLabel" name="label_4">
+     <widget class="QLabel" name="label_7">
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
       <property name="font">
        <font>
         <pointsize>10</pointsize>
        </font>
       </property>
       <property name="text">
-       <string>Наименование НИР</string>
+       <string>Руководитель НИР</string>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="nir_name">
+     <widget class="QLineEdit" name="nir_ruk">
       <property name="font">
        <font>
         <pointsize>12</pointsize>
@@ -245,7 +130,7 @@
        <string/>
       </property>
       <property name="placeholderText">
-       <string/>
+       <string>Сергей Павлович Королёв</string>
       </property>
      </widget>
     </item>
@@ -254,114 +139,29 @@
   <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
-     <x>0</x>
-     <y>150</y>
-     <width>151</width>
-     <height>52</height>
+     <x>290</x>
+     <y>410</y>
+     <width>261</width>
+     <height>170</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_5">
+   <layout class="QVBoxLayout" name="verticalLayout_10">
     <item>
-     <widget class="QLabel" name="label_5">
-      <property name="font">
-       <font>
-        <pointsize>10</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Рег. номер НИР</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="reg_number">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="placeholderText">
-       <string/>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>260</y>
-     <width>151</width>
-     <height>50</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_6">
-    <item>
-     <widget class="QLabel" name="label_6">
-      <property name="text">
-       <string>Код ГРНТИ</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="grnti">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="placeholderText">
-       <string>Код ГРНТИ</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="">
-   <property name="geometry">
-    <rect>
-     <x>244</x>
-     <y>380</y>
-     <width>312</width>
-     <height>166</height>
-    </rect>
-   </property>
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
      <layout class="QVBoxLayout" name="verticalLayout_7">
       <item>
-       <widget class="QLabel" name="label_7">
-        <property name="minimumSize">
-         <size>
-          <width>149</width>
-          <height>130</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>200</width>
-          <height>200</height>
-         </size>
-        </property>
+       <widget class="QLabel" name="label_8">
         <property name="font">
          <font>
-          <pointsize>9</pointsize>
+          <pointsize>10</pointsize>
          </font>
         </property>
         <property name="text">
-         <string>Руководитель НИР</string>
+         <string>Должность</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="nir_ruk">
+       <widget class="QLineEdit" name="ruk_doljnost">
         <property name="font">
          <font>
           <pointsize>12</pointsize>
@@ -371,25 +171,294 @@
          <string/>
         </property>
         <property name="placeholderText">
-         <string>Сергей Павлович Королёв</string>
+         <string>рук.отд., зав.каф., зав.лаб., нач.отд</string>
         </property>
        </widget>
       </item>
      </layout>
     </item>
-    <item row="0" column="1">
-     <layout class="QVBoxLayout" name="verticalLayout_10">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_8">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_9">
+       <widget class="QLabel" name="label_9">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Ученое звание</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="ruk_zvanie">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>доц., проф., чл.-корр, акад. </string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_9">
+      <item>
+       <widget class="QLabel" name="label_10">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Ученая степень</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="ruk_stepen">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>к.т.н., д.т.н., к.б.н., д.ф.-м.н.</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>230</y>
+     <width>541</width>
+     <height>170</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_14">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Наименование НИР</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="nir_name">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>Теплофизика и теплоэнергетика</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_12">
+      <item>
+       <widget class="QLabel" name="label_12">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Выставка</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="vistavka">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>Международная выставка EXAMPLE в г. Москве</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_13">
+      <item>
+       <widget class="QLabel" name="label_13">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Выставочный экспонат</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="exponat_name">
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="placeholderText">
+         <string>Компьютерная радиолаборатория RADIOLAB</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>110</y>
+     <width>401</width>
+     <height>117</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_15">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QLabel" name="label_10">
+         <widget class="QLabel" name="label_3">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
-           <string>Ученая степень</string>
+           <string>Признак формы НИР</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="ruk_stepen">
+         <widget class="QComboBox" name="priznak">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+          <property name="placeholderText">
+           <string/>
+          </property>
+          <item>
+           <property name="text">
+            <string>Тематический план</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>НТП</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_11">
+        <item>
+         <widget class="QLabel" name="label_11">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Наличие экспоната</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="exponat_est">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+          <property name="placeholderText">
+           <string/>
+          </property>
+          <item>
+           <property name="text">
+            <string>Есть</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Планируется</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Нет</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_6">
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Код ГРНТИ</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="grnti">
           <property name="font">
            <font>
             <pointsize>12</pointsize>
@@ -399,23 +468,28 @@
            <string/>
           </property>
           <property name="placeholderText">
-           <string>к.т.н., д.т.н., к.б.н., д.ф.-м.н.</string>
+           <string>29.34.12; 02.12.32; 03.43</string>
           </property>
          </widget>
         </item>
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_8">
+       <layout class="QVBoxLayout" name="verticalLayout_5">
         <item>
-         <widget class="QLabel" name="label_9">
+         <widget class="QLabel" name="label_5">
+          <property name="font">
+           <font>
+            <pointsize>10</pointsize>
+           </font>
+          </property>
           <property name="text">
-           <string>Ученое звание</string>
+           <string>Рег. номер НИР</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="ruk_zvanie">
+         <widget class="QLineEdit" name="reg_number">
           <property name="font">
            <font>
             <pointsize>12</pointsize>
@@ -425,33 +499,7 @@
            <string/>
           </property>
           <property name="placeholderText">
-           <string>доц., проф., чл.-корр, акад. </string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>Должность</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="ruk_doljnost">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="placeholderText">
-           <string>рук.отд., зав.каф., зав.лаб., нач.отд</string>
+           <string>183</string>
           </property>
          </widget>
         </item>

@@ -2,7 +2,7 @@ import sys
 
 import PySide6
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
-                               QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout)
+                               QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView)
 from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
@@ -57,12 +57,6 @@ class ExponatDBMS(QMainWindow):
         # self.ui.scrollArea.setWidget(self.filter_container_widget)  # Устанавливаем контейнер в QScrollArea
         # self.ui.scrollArea.setWidgetResizable(True)  # Делаем виджет растягиваемым
 
-        # Добавляем combobox для фильтрации
-        #self.ui.add_filters_cb.activated.connect(self.add_filter_field)
-
-        # # # Кнопка для сброса фильтров
-        # self.ui.tables_menu.triggered.connect(self.set_current_table)
-
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         self.ui.delete_btn.clicked.connect(self.delete_record)
 
@@ -71,24 +65,38 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog = Ui_add_zapis_dialog()
         self.ui_create_entry_dialog.setupUi(self.new_dialog)
         self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_entry)
+        self.ui_create_entry_dialog.vuz.addItems(self.get_column_values(self.ui.vuz_table, "Название ВУЗа"))
+        self.new_dialog.setFixedSize(561, 664)
         self.new_dialog.show()
 
     def create_entry(self):
+        exp_est = {
+            "Есть": "Е",
+            "Планируется": "П",
+            "Нет": "Н"
+        }
+        prizn = {
+            "Тематический план": "Е",
+            "НТП": "М"
+        }
         vuz = self.ui_create_entry_dialog.vuz.currentText()
-        priznak = self.ui_create_entry_dialog.priznak.currentText()
+        priznak = prizn[self.ui_create_entry_dialog.priznak.currentText()]
         reg_number = self.ui_create_entry_dialog.reg_number.text()
         nir_name = self.ui_create_entry_dialog.nir_name.text()
         grnti = self.ui_create_entry_dialog.grnti.text()
         nir_ruk = self.ui_create_entry_dialog.grnti.text()
         nir_ruk_info = f"{self.ui_create_entry_dialog.ruk_doljnost.text()}, {self.ui_create_entry_dialog.ruk_zvanie.text()}, {self.ui_create_entry_dialog.ruk_stepen.text()}"
-        exponat_est = self.ui_create_entry_dialog.exponat_est.currentText()
+        exponat_est = exp_est[self.ui_create_entry_dialog.exponat_est.currentText()]
         vistavka = self.ui_create_entry_dialog.vistavka.text()
         exponat_name = self.ui_create_entry_dialog.exponat_name.text()
+        self.ui.vyst_mo_table.setEditTriggers(QAbstractItemView.EditTrigger.AllEditTriggers)
 
         if vuz and priznak and reg_number and nir_name and grnti and nir_ruk and nir_ruk_info and exponat_name and exponat_est and vistavka:
+            while self.vyst_mo_table_model.canFetchMore():
+                self.vyst_mo_table_model.fetchMore()
             row_count = self.vyst_mo_table_model.rowCount()
-            self.vyst_mo_table_model.insertRow(row_count)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 1), vuz)
+            self.vyst_mo_table_model.insertRow(row_count+1)
+            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 1), int(self.get_value_from_table(self.ui.vuz_table, "Код ВУЗа", self.find_row_by_value(self.ui.vuz_table, "Название ВУЗа", vuz))))
             self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 2), priznak)
             self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 3), reg_number)
             self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 4), nir_name)
@@ -98,47 +106,13 @@ class ExponatDBMS(QMainWindow):
             self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 8), exponat_est)
             self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 9), vistavka)
             self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 10), exponat_name)
-            self.vyst_mo_table_model.submitAll()
-            self.vyst_mo_table_model.select()
-            #TODO
 
-            row_count_2 = self.svod_table_model.rowCount()
-            self.svod_table_model.insertRow(row_count)
-            print(self.svod_table_model.index(row_count_2, 0))
-            print(self.svod_table_model.index(row_count_2, 1))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 1), self.get_value_by_key(self.vuz_table_model, vuz, 0, 1))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 2), self.get_value_by_key(self.vuz_table_model, vuz, 0, 2))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 3), self.get_value_by_key(self.vuz_table_model, vuz, 0, 3))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 4), self.get_value_by_key(self.vuz_table_model, vuz, 0, 4))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 5), self.get_value_by_key(self.vuz_table_model, vuz, 0, 5))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 6), self.get_value_by_key(self.vuz_table_model, vuz, 0, 6))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 7), self.get_value_by_key(self.vuz_table_model, vuz, 0, 7))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 8), self.get_value_by_key(self.vuz_table_model, vuz, 0, 8))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 9), self.get_value_by_key(self.vuz_table_model, vuz, 0, 9))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 10), self.get_value_by_key(self.vuz_table_model, vuz, 0, 10))
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 11), self.get_value_by_key(self.vuz_table_model, vuz, 0, 11))
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 1), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(1, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 2), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(2, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 3), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(3, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 4), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(4, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 5), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(5, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 6), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(6, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 7), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(7, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 8), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(8, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 9), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(9, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 10), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(10, Qt.Orientation.Horizontal)])
-            # self.svod_table_model.setData(self.svod_table_model.index(row_count, 11), (self.get_row_by_key(self.vuz_table_model, vuz, 0))[self.svod_table_model.headerData(11, Qt.Orientation.Horizontal)])
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 12), priznak)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 13), reg_number)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 14), nir_name)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 15), grnti)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 16), nir_ruk)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 17), nir_ruk_info)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 18), exponat_est)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 19), vistavka)
-            self.svod_table_model.setData(self.svod_table_model.index(row_count_2, 20), exponat_name)
-            self.svod_table_model.submitAll()
-            self.svod_table_model.select()
+            if not self.vyst_mo_table_model.submitAll():
+                print("Ошибка добавления записи:", self.vyst_mo_table_model.lastError().text())
+            if self.vyst_mo_table_model.select():
+                print("kaef")
+
+            self.ui.vyst_mo_table.setModel(self.vyst_mo_table_model)
 
         self.new_dialog.close()
 
@@ -160,6 +134,50 @@ class ExponatDBMS(QMainWindow):
             # print(selected.row())
             model.submitAll()
             model.select()
+
+    def find_row_by_value(self, table_view: QTableView, column_name: str, value):
+        # Получаем модель данных QSqlTableModel из представления QTableView
+        model: QSqlTableModel = table_view.model()
+
+        # Ищем индекс столбца по его имени
+        column_index = -1
+        for i in range(model.columnCount()):
+            if model.headerData(i, Qt.Horizontal) == column_name:
+                column_index = i
+                break
+
+        if column_index == -1:
+            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+
+        # Проходим по каждой строке и проверяем значение в нужном столбце
+        for row in range(model.rowCount()):
+            cell_value = model.index(row, column_index).data()
+            if cell_value == value:
+                return row
+
+        # Если значение не найдено, возвращаем -1
+        return -1
+
+    def get_value_from_table(self, table_view: QTableView, column_name: str, row: int):
+        # Получаем модель данных QSqlTableModel из представления QTableView
+        model: QSqlTableModel = table_view.model()
+
+        # Ищем индекс столбца по его имени
+        column_index = -1
+        for i in range(model.columnCount()):
+            if model.headerData(i, Qt.Horizontal) == column_name:
+                column_index = i
+                break
+
+        if column_index == -1:
+            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+
+        # Проверяем, что номер строки корректный
+        if row < 0 or row >= model.rowCount():
+            raise ValueError(f"Неверный номер строки: {row}. Допустимые значения от 0 до {model.rowCount() - 1}.")
+
+        # Получаем значение ячейки по индексу строки и столбца
+        return model.index(row, column_index).data()
 
     def get_value_by_key(self, model, key_value, key_column=0, target_column=1):
         """
@@ -229,6 +247,7 @@ class ExponatDBMS(QMainWindow):
         self.vuz_table_model = self.create_model("VUZ")
         self.grntirub_table_model = self.create_model("grntirub")
         self.svod_table_model = self.create_model("svod")
+
 
         # Устанавливаем модели и заголовки
         self.ui.vyst_mo_table.setModel(self.vyst_mo_table_model)
