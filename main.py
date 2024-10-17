@@ -2,13 +2,15 @@ import sys
 
 import PySide6
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
-                               QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView)
+                               QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
+                               QMessageBox, QDialog)
 from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 from connection import Data
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
+from py_ui.ui_cancel_confirm import Ui_Dialog
 
 
 class ExponatDBMS(QMainWindow):
@@ -58,7 +60,7 @@ class ExponatDBMS(QMainWindow):
         # self.ui.scrollArea.setWidgetResizable(True)  # Делаем виджет растягиваемым
 
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
-        self.ui.delete_btn.clicked.connect(self.delete_record)
+        self.ui.delete_btn.clicked.connect(self.delete_button_action)
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
@@ -67,6 +69,7 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_entry)
         self.ui_create_entry_dialog.vuz.addItems(self.get_column_values(self.ui.vuz_table, "Название ВУЗа"))
         self.new_dialog.setFixedSize(561, 664)
+        self.new_dialog.setModal(True)
         self.new_dialog.show()
 
     def create_entry(self):
@@ -116,24 +119,59 @@ class ExponatDBMS(QMainWindow):
 
         self.new_dialog.close()
 
+    def open_confirm_dialog(self, selected_row):
+        self.confirm_dialog = QDialog()  # Теперь должно работать
+        self.ui_confirm_dialog = Ui_Dialog()
+        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+   # Устанавливаем текст в QLabel
+        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
 
-    def delete_record(self):
-        current_table: QTableView = self.ui.db_tables.currentWidget().children()[1]
-        # index = current_table.selectedIndexes()[0]
-        # # selected = current_table.currentIndex()
-        # if len(index) != 0:
-        #     for i in range(len(index)):
-        #         current_table.removeRow(i)
-        #     current_table.submitAll()
-        #     current_table.select()
+    # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(selected_row))
 
-        selected = current_table.currentIndex()
-        model: QAbstractItemModel = current_table.model()
-        if selected.row() != -1:
-            model.removeRow(selected.row())
-            # print(selected.row())
-            model.submitAll()
-            model.select()
+    # Подключаем кнопку "Cancel" для закрытия диалога
+        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+        self.confirm_dialog.exec_()
+        self.confirm_dialog.setModal(True)
+
+    def delete_button_action(self):
+        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
+        if current_widget is not None:  # Проверяем, что текущий виджет существует
+            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
+
+            if isinstance(current_table, QTableView):
+                selected_row = current_table.selectionModel().currentIndex().row()
+
+                if selected_row >= 0:  # Проверяем, что строка выделена
+                    self.open_confirm_dialog(selected_row)  # Передаем номер строки
+                else:
+                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
+            else:
+                QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
+        else:
+            QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
+
+    def delete_record(self, selected_row):
+    # Получаем текущий виджет QTableView
+        current_table = self.ui.db_tables.currentWidget().children()[1]
+
+        if isinstance(current_table, QTableView):
+            model = current_table.model()  # Получаем модель таблицы
+            model.removeRow(selected_row)  # Удаляем строку
+            model.submitAll()  # Применяем изменения
+            model.select()  # Обновляем данные в таблице
+
+        self.confirm_dialog.close()  # Закрываем диалог
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.connection.close_all_windows()
+            event.accept()
+        else:
+            event.ignore()
 
     def find_row_by_value(self, table_view: QTableView, column_name: str, value):
         # Получаем модель данных QSqlTableModel из представления QTableView
@@ -263,13 +301,13 @@ class ExponatDBMS(QMainWindow):
         self.ui.svod_table.setSortingEnabled(False)
 
         # Настройка заголовков
-        self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа/организации",
-                                                  "Признак  формы НИР", "Регистрационный номер НИР", "Наименование проекта/НИР",
-                                                  "Коды  ГРНТИ", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
-                                                  "Признак", "Выставки", "Название выставочного экспоната"])
+        self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа",
+                                                  "Пр-к  ф. НИР", "Рег. ном. НИР", "Наименование НИР",
+                                                  "Коды  ГРНТИ", "Руководитель НИР", "Долж., Уч.З, Уч.Ст",
+                                                  "Пр-к", "Выставки", "Выставочный экспонат"])
 
-        self.set_custom_headers(self.vuz_table_model, ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокращенное наименование",
-                                               "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"])
+        self.set_custom_headers(self.vuz_table_model, ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокр. наим.",
+                                               "Федеральный округ", 'Город', "Статус", "№ обл.", "Область", "Категория", "Профиль"])
 
         self.set_custom_headers(self.grntirub_table_model, ["Код рубрики", "Наименование рубрики"])
         self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Сокр. наим. ВУЗа",
@@ -291,7 +329,6 @@ class ExponatDBMS(QMainWindow):
         self.ui.svod_table.horizontalHeader().sectionClicked.connect(
             lambda index: self.handle_header_click(self.ui.svod_table, index)
         )
-
 
         # Устанавливаем режим растягивания заголовков
         for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table]:
@@ -613,28 +650,28 @@ class ExponatDBMS(QMainWindow):
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
             self.ui.delete_btn.setEnabled(True)
-            print(self.get_column_values(self.ui.grntirub_table, "Код рубрики"))
+            # print(self.get_column_values(self.ui.grntirub_table, "Код рубрики"))
         elif text == "Выставки":
             self.ui.db_tables.setCurrentIndex(1)
             self.current_model = self.vyst_mo_table_model
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
             self.ui.delete_btn.setEnabled(True)
-            print(self.get_column_values(self.ui.vyst_mo_table, "Признак  формы НИР"))
+            # print(self.get_column_values(self.ui.vyst_mo_table, "Признак  формы НИР"))
         elif text == "ВУЗы":
             self.ui.db_tables.setCurrentIndex(2)
             self.current_model = self.vuz_table_model
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
             self.ui.delete_btn.setEnabled(True)
-            print(self.get_column_values(self.ui.vuz_table, "Полное наименование"))
+            # print(self.get_column_values(self.ui.vuz_table, "Полное наименование"))
         elif text == "Сводная таблица":
             self.ui.db_tables.setCurrentIndex(0)
             self.current_model = self.svod_table_model
             self.ui.create_btn.setEnabled(False)
             self.ui.update_btn.setEnabled(False)
             self.ui.delete_btn.setEnabled(False)
-            print(self.get_column_values(self.ui.svod_table, "Руководитель НИР"))
+            # print(self.get_column_values(self.ui.svod_table, "Руководитель НИР"))
 
             #TODO ATTENTION ТЫ ТЕСТИРОВАЛ НОЧЬЮ ФУНКЦИЮ GET_COLUMN_VALUES, ОНА РАБОТАЕТ, НО ПОЧЕМУ ТО 2 РАЗА ВЫВОДИЛА КОРОЧЕ РЕЗУЛЬТАТ,
             #СКОРЕЕ ВСЕГО СВЯЗАНО С КНОПКОЙ МЕНЮ
@@ -697,12 +734,8 @@ class NonEditableSqlTableModel(QSqlTableModel):
     def flags(self, index):
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
-
-
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = ExponatDBMS()
     window.show()
     sys.exit(app.exec())
-
