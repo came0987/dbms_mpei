@@ -62,8 +62,9 @@ class ExponatDBMS(QMainWindow):
 
         # # # Кнопка для сброса фильтров
         # self.ui.tables_menu.triggered.connect(self.set_current_table)
-        # self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
-        # self.ui.delete_btn.clicked.connect(self.delete_record)
+
+        self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
+        self.ui.delete_btn.clicked.connect(self.delete_record)
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
@@ -143,7 +144,7 @@ class ExponatDBMS(QMainWindow):
 
 
     def delete_record(self):
-        current_table: QTableView = self.ui.db_tables.currentWidget().children()[0]
+        current_table: QTableView = self.ui.db_tables.currentWidget().children()[1]
         # index = current_table.selectedIndexes()[0]
         # # selected = current_table.currentIndex()
         # if len(index) != 0:
@@ -156,6 +157,7 @@ class ExponatDBMS(QMainWindow):
         model: QAbstractItemModel = current_table.model()
         if selected.row() != -1:
             model.removeRow(selected.row())
+            # print(selected.row())
             model.submitAll()
             model.select()
 
@@ -280,6 +282,32 @@ class ExponatDBMS(QMainWindow):
             header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         self.ui.vyst_mo_table.setColumnHidden(10, True)
+
+    def get_column_values(self, table_view: QTableView, column_name: str) -> list:
+        # Получаем модель данных QSqlTableModel из представления QTableView
+
+        model: QSqlTableModel = table_view.model()
+
+        # Ищем индекс столбца по его имени
+        column_index = -1
+        for i in range(model.columnCount()):
+            if model.headerData(i, Qt.Horizontal) == column_name:
+                column_index = i
+                break
+
+        if column_index == -1:
+            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+
+        # Список для хранения значений столбца
+        column_values = []
+
+        # Проходим по каждой строке и собираем значения из нужного столбца
+        for row in range(model.rowCount()):
+            value = model.index(row, column_index).data()
+            column_values.append(value)
+
+        return column_values
+
 
     def update_filter_input_field(self):
         selected_filter = self.ui.add_filters_cb.currentText()
@@ -563,15 +591,34 @@ class ExponatDBMS(QMainWindow):
         if text == "ГРНТИ":
             self.ui.db_tables.setCurrentIndex(3)
             self.current_model = self.grntirub_table_model
+            self.ui.create_btn.setEnabled(True)
+            self.ui.update_btn.setEnabled(True)
+            self.ui.delete_btn.setEnabled(True)
+            print(self.get_column_values(self.ui.grntirub_table, "Код рубрики"))
         elif text == "Выставки":
             self.ui.db_tables.setCurrentIndex(1)
             self.current_model = self.vyst_mo_table_model
+            self.ui.create_btn.setEnabled(True)
+            self.ui.update_btn.setEnabled(True)
+            self.ui.delete_btn.setEnabled(True)
+            print(self.get_column_values(self.ui.vyst_mo_table, "Признак  формы НИР"))
         elif text == "ВУЗы":
             self.ui.db_tables.setCurrentIndex(2)
             self.current_model = self.vuz_table_model
+            self.ui.create_btn.setEnabled(True)
+            self.ui.update_btn.setEnabled(True)
+            self.ui.delete_btn.setEnabled(True)
+            print(self.get_column_values(self.ui.vuz_table, "Полное наименование"))
         elif text == "Сводная таблица":
             self.ui.db_tables.setCurrentIndex(0)
             self.current_model = self.svod_table_model
+            self.ui.create_btn.setEnabled(False)
+            self.ui.update_btn.setEnabled(False)
+            self.ui.delete_btn.setEnabled(False)
+            print(self.get_column_values(self.ui.svod_table, "Руководитель НИР"))
+
+            #TODO ATTENTION ТЫ ТЕСТИРОВАЛ НОЧЬЮ ФУНКЦИЮ GET_COLUMN_VALUES, ОНА РАБОТАЕТ, НО ПОЧЕМУ ТО 2 РАЗА ВЫВОДИЛА КОРОЧЕ РЕЗУЛЬТАТ,
+            #СКОРЕЕ ВСЕГО СВЯЗАНО С КНОПКОЙ МЕНЮ
 
         # Обновление комбобокса с доступными колонками для фильтрации
         self.update_filter_combobox()
