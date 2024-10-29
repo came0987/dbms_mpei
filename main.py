@@ -119,50 +119,54 @@ class ExponatDBMS(QMainWindow):
 
         self.new_dialog.close()
 
-    def open_confirm_dialog(self, selected_row):
-        self.confirm_dialog = QDialog()  # Теперь должно работать
-        self.ui_confirm_dialog = Ui_Dialog()
-        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
-        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
-   # Устанавливаем текст в QLabel
-        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
-
-    # Подключаем кнопку "OK" к функции delete_record
-        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(selected_row))
-
-    # Подключаем кнопку "Cancel" для закрытия диалога
-        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
-        self.confirm_dialog.exec_()
-        self.confirm_dialog.setModal(True)
-
     def delete_button_action(self):
-        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
-        if current_widget is not None:  # Проверяем, что текущий виджет существует
-            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
+        current_widget = self.ui.db_tables.currentWidget() # Получаем текущий виджет
+        if current_widget is not None: # Проверяем, что текущий виджет существует
+            current_table: QTableView = current_widget.children()[1] # Получаем второй дочерний элемент
 
             if isinstance(current_table, QTableView):
-                selected_row = current_table.selectionModel().currentIndex().row()
+                selected_rows = current_table.selectionModel().selectedRows()
 
-                if selected_row >= 0:  # Проверяем, что строка выделена
-                    self.open_confirm_dialog(selected_row)  # Передаем номер строки
+                if selected_rows:
+                    row_numbers = [row.row() + 1 for row in selected_rows]
+                    self.open_confirm_dialog(row_numbers) # Передаем список номеров строк
                 else:
-                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
+                    QMessageBox.warning(self, "Ошибка", "Выберите строки в таблице.")
             else:
                 QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
         else:
             QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
 
-    def delete_record(self, selected_row):
-    # Получаем текущий виджет QTableView
+    def open_confirm_dialog(self, row_numbers):
+        self.confirm_dialog = QDialog() # Теперь должно работать
+        self.ui_confirm_dialog = Ui_Dialog()
+        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+
+        # Формируем текст с номерами строк
+        row_numbers_str = ", ".join(str(number) for number in row_numbers)
+        self.ui_confirm_dialog.label.setText(f"Удалить строки с номером {row_numbers_str}?")
+
+        # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(row_numbers))
+
+        # Подключаем кнопку "Cancel" для закрытия диалога
+        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+        self.confirm_dialog.exec_()
+        self.confirm_dialog.setModal(True)
+
+    def delete_record(self, row_numbers):
+        # Получаем текущий виджет QTableView
         current_table = self.ui.db_tables.currentWidget().children()[1]
 
         if isinstance(current_table, QTableView):
-            model = current_table.model()  # Получаем модель таблицы
-            model.removeRow(selected_row)  # Удаляем строку
-            model.submitAll()  # Применяем изменения
-            model.select()  # Обновляем данные в таблице
+            model = current_table.model() # Получаем модель таблицы
+        # Удаляем строки в обратном порядке, чтобы индексы не смещались
+            for row_number in sorted(row_numbers, reverse=True):
+                model.removeRow(row_number - 1) # Удаляем строку
+            model.submitAll() # Применяем изменения
+            model.select() # Обновляем данные в таблице
 
-        self.confirm_dialog.close()  # Закрываем диалог
+        self.confirm_dialog.close() # Закрываем диалог
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -315,6 +319,11 @@ class ExponatDBMS(QMainWindow):
                                                         "Рег. номер НИР", "Выставки", "Выставочный экспонат", "Признак  формы НИР", "Признак", "Название ВУЗа", "Полное наименование",
                                                "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"
                                                         ])
+        
+        self.ui.vyst_mo_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.vuz_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
