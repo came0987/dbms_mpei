@@ -1,5 +1,11 @@
 from PySide6 import QtSql, QtWidgets
 from PySide6.QtWidgets import QApplication
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+engine = create_engine('sqlite:///database.db')
+Session = sessionmaker(bind=engine)
+session = Session()
 
 
 class Data:
@@ -9,7 +15,7 @@ class Data:
 
     def create_connection(self):
         db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-        db.setDatabaseName('data_base.db')
+        db.setDatabaseName('database.db')
 
         if not db.open():
             QtWidgets.QMessageBox.critical(None, "Cannot open database",
