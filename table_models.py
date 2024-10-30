@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import Integer, String, ForeignKey, CHAR, select, Column
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedColumn, InstrumentedAttribute
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedColumn, InstrumentedAttribute, relationship
 
 from connection import Session
 
@@ -17,7 +17,7 @@ class Base(DeclarativeBase):
         stmt = select(column)
 
         # Выполняем запрос и получаем значения с использованием нового синтаксиса
-        with session.begin():
+        with Session() as session:
             results = session.execute(stmt).scalars().all()
 
         return results
@@ -42,6 +42,7 @@ class VuzBase(Base):
     gr_ved: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     prof: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
+    vysts = relationship("ExpositionBase", back_populates="vuz", cascade="all, delete")
 
 class GrntiBase(Base):
     __tablename__ = 'grnti'
@@ -67,3 +68,9 @@ class ExpositionBase(Base):
     exhitype: Mapped[str] = mapped_column(String(5), nullable=False)
     vystavki: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     exponat: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    vuz = relationship("VuzBase", back_populates="vysts")
+
+    # @staticmethod
+    # def create_user(user: ExpositionBase, session) -> None:
+    #     session.add(user)

@@ -3,6 +3,7 @@ import sqlite3
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from connection import Session, engine
 from table_models import Base, GrntiBase, VuzBase, ExpositionBase
 
 
@@ -41,20 +42,16 @@ def load_excel_to_table(file_path, model_class, session):
 
 def fill_tables_from_excel():
     # Создаем сессию
-    Session = sessionmaker(bind=engine)
     session = Session()
-
-    # Заполнение таблиц
-    load_excel_to_table('./data/grntirub.xlsx', GrntiBase, session)
-    load_excel_to_table('./data/vuz.xlsx', VuzBase, session)
-    load_excel_to_table('./data/vyst_mo.xlsx', ExpositionBase, session)
-
-    # Закрываем сессию после завершения
-    session.close()
+    with Session() as session:
+        # Заполнение таблиц
+        load_excel_to_table('./data/grntirub.xlsx', GrntiBase, session)
+        load_excel_to_table('./data/vuz.xlsx', VuzBase, session)
+        load_excel_to_table('./data/vyst_mo.xlsx', ExpositionBase, session)
 
 
 # Создаем подключение к базе данных SQLite
-engine = create_engine('sqlite:///database.db')
+# engine = create_engine('sqlite:///database.db')
 
 
 if __name__ == '__main__':
