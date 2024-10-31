@@ -1,10 +1,12 @@
 import sys
+from typing import re
 
 import PySide6
+from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
                                QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
                                QMessageBox, QDialog)
-from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel
+from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel, QRegularExpression
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel, QSqlRecord
 from sqlalchemy import create_engine
@@ -15,7 +17,7 @@ from connection import Session, Data
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
-from table_models import VuzBase, ExpositionBase
+from table_models import VuzBase, ExpositionBase, GrntiBase
 
 
 class ExponatDBMS(QMainWindow):
@@ -75,6 +77,22 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
         self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
 
+        self.ui_create_entry_dialog.vuz.setEditable(True)
+        self.ui_create_entry_dialog.codvuz.setEditable(True)
+        self.ui_create_entry_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")  # Разрешаем только буквы и пробелы
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+        validator_1 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_doljnost)
+        self.ui_create_entry_dialog.ruk_doljnost.setValidator(validator_1)
+        validator_2 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_zvanie)
+        self.ui_create_entry_dialog.ruk_zvanie.setValidator(validator_2)
+        validator_3 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_stepen)
+        self.ui_create_entry_dialog.ruk_stepen.setValidator(validator_3)
+
         Data.close_connection()
         with Session() as session:
         # Извлекаем все записи из таблицы Vuz
@@ -85,11 +103,89 @@ class ExponatDBMS(QMainWindow):
             self.ui_create_entry_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
             self.ui_create_entry_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
 
+        # Заполняем ComboBox значениями
+        vuz_list = [vuz.z1 for vuz in vuz_records]
+        codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
+
+        self.ui_create_entry_dialog.vuz.addItems(vuz_list)
+        self.ui_create_entry_dialog.codvuz.addItems(codvuz_list)
+
+        # Настройка комплитеров после заполнения ComboBox
+        vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
+        codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
+
+        vuz_completer.setCompletionMode(QCompleter.PopupCompletion)
+        codvuz_completer.setCompletionMode(QCompleter.PopupCompletion)
+
+        self.ui_create_entry_dialog.vuz.setCompleter(vuz_completer)
+        self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
+
+        # Ограничиваем ввод только существующими значениями
+        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(self.validate_vuz_input)
+        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(self.validate_codvuz_input)
+
+        # Регулярное выражение для разрешения только букв в nir_ruk
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+
         # print(VuzBase.get_column_values(session, VuzBase.z1))
         # self.ui_create_entry_dialog.vuz.addItems(VuzBase.get_column_values(session, VuzBase.z1))#self.get_column_values(self.ui.vuz_table, "Название ВУЗа"))
         self.new_dialog.setFixedSize(561, 664)
         self.new_dialog.setModal(True)
         self.new_dialog.show()
+
+    def validate_grnti_prefix(self, text):
+        # Проверка длины текста и завершение проверки, если недостаточно символов
+        if len(text) < 2:
+            return
+
+        # Извлекаем первые две цифры
+        prefix = text[:2]
+
+        # Проверяем наличие префикса в базе данных
+        Data.close_connection()
+        with Session() as session:
+            exists = session.query(GrntiBase).filter_by(codrub=int(prefix)).first() is not None
+        Data.create_connection()
+
+        if not exists:
+            # Если префикс отсутствует в базе данных, запрещаем дальнейший ввод
+            self.ui_create_entry_dialog.grnti.blockSignals(True)
+            self.ui_create_entry_dialog.grnti.setText(prefix)
+            self.ui_create_entry_dialog.grnti.blockSignals(False)
+
+    def validate_vuz_input(self):
+        input_text = self.ui_create_entry_dialog.vuz.currentText()
+        if self.ui_create_entry_dialog.vuz.findText(input_text) == -1:
+            # Если введенное значение не найдено, сбрасываем поле
+            self.ui_create_entry_dialog.vuz.setCurrentIndex(-1)
+
+    def validate_codvuz_input(self):
+        input_text = self.ui_create_entry_dialog.codvuz.currentText()
+        if self.ui_create_entry_dialog.codvuz.findText(input_text) == -1:
+            # Если введенное значение не найдено, сбрасываем поле
+            self.ui_create_entry_dialog.codvuz.setCurrentIndex(-1)
+
+    def auto_insert_dots(self):
+        text = self.ui_create_entry_dialog.grnti.text().replace(".", "")  # Убираем все точки перед обработкой
+        formatted_text = ""
+
+        # Добавляем точку после каждой пары цифр, пока текст не станет "xx.xx.xx"
+        for i in range(len(text)):
+            if i > 0 and i % 2 == 0:
+                formatted_text += "."
+            formatted_text += text[i]
+
+        # Ограничиваем ввод до 8 символов (формат "xx.xx.xx")
+        if len(formatted_text) > 8:
+            formatted_text = formatted_text[:8]
+
+        # Обновляем текст в поле и курсор в конце текста
+        self.ui_create_entry_dialog.grnti.blockSignals(True)  # Отключаем сигнал, чтобы избежать рекурсии
+        self.ui_create_entry_dialog.grnti.setText(formatted_text)
+        self.ui_create_entry_dialog.grnti.blockSignals(False)
+        self.ui_create_entry_dialog.grnti.setCursorPosition(len(formatted_text))
 
     def sync_codvuz_combo(self):
         # Получаем codvuz, связанный с текущим vuzname
