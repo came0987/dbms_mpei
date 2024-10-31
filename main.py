@@ -1,5 +1,5 @@
 import sys
-from typing import re
+# from typing import re
 
 import PySide6
 from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
@@ -107,15 +107,15 @@ class ExponatDBMS(QMainWindow):
         vuz_list = [vuz.z1 for vuz in vuz_records]
         codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
 
-        self.ui_create_entry_dialog.vuz.addItems(vuz_list)
-        self.ui_create_entry_dialog.codvuz.addItems(codvuz_list)
+        # self.ui_create_entry_dialog.vuz.addItems(vuz_list)
+        # self.ui_create_entry_dialog.codvuz.addItems(codvuz_list)
 
         # Настройка комплитеров после заполнения ComboBox
         vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
         codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
 
-        vuz_completer.setCompletionMode(QCompleter.PopupCompletion)
-        codvuz_completer.setCompletionMode(QCompleter.PopupCompletion)
+        vuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        codvuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 
         self.ui_create_entry_dialog.vuz.setCompleter(vuz_completer)
         self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
@@ -235,6 +235,22 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
         self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
 
+        self.ui_create_entry_dialog.vuz.setEditable(True)
+        self.ui_create_entry_dialog.codvuz.setEditable(True)
+        self.ui_create_entry_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")  # Разрешаем только буквы и пробелы
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+        validator_1 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_doljnost)
+        self.ui_create_entry_dialog.ruk_doljnost.setValidator(validator_1)
+        validator_2 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_zvanie)
+        self.ui_create_entry_dialog.ruk_zvanie.setValidator(validator_2)
+        validator_3 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_stepen)
+        self.ui_create_entry_dialog.ruk_stepen.setValidator(validator_3)
+
         Data.close_connection()
         with Session() as session:
         # Извлекаем все записи из таблицы Vuz
@@ -268,6 +284,32 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.exponat_est.setCurrentText(exp_est[row_data[10]])
         self.ui_create_entry_dialog.vistavka.setText(row_data[11])
         self.ui_create_entry_dialog.exponat_name.setText(row_data[12])
+
+        # Заполняем ComboBox значениями
+        vuz_list = [vuz.z1 for vuz in vuz_records]
+        codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
+
+        # self.ui_create_entry_dialog.vuz.addItems(vuz_list)
+        # self.ui_create_entry_dialog.codvuz.addItems(codvuz_list)
+
+        # Настройка комплитеров после заполнения ComboBox
+        vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
+        codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
+
+        vuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        codvuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+
+        self.ui_create_entry_dialog.vuz.setCompleter(vuz_completer)
+        self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
+
+        # Ограничиваем ввод только существующими значениями
+        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(self.validate_vuz_input)
+        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(self.validate_codvuz_input)
+
+        # Регулярное выражение для разрешения только букв в nir_ruk
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
 
         Data.close_connection()
         current_obj = ExpositionBase.get_by_name_2(row_data[1], row_data[3])
@@ -308,7 +350,7 @@ class ExponatDBMS(QMainWindow):
         reg_number = self.ui_create_entry_dialog.reg_number.text()
         nir_name = self.ui_create_entry_dialog.nir_name.text()
         grnti = self.ui_create_entry_dialog.grnti.text()
-        nir_ruk = self.ui_create_entry_dialog.grnti.text()
+        nir_ruk = self.ui_create_entry_dialog.nir_ruk.text()
         ruk_doljnost = self.ui_create_entry_dialog.ruk_doljnost.text()
         ruk_zvanie = self.ui_create_entry_dialog.ruk_zvanie.text()
         ruk_stepen = self.ui_create_entry_dialog.ruk_stepen.text()
