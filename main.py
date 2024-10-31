@@ -64,12 +64,13 @@ class ExponatDBMS(QMainWindow):
 
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         self.ui.delete_btn.clicked.connect(self.delete_button_action)
+        self.ui.update_btn.clicked.connect(self.update_vyst_button_action)
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_entry_dialog = Ui_add_zapis_dialog()
         self.ui_create_entry_dialog.setupUi(self.new_dialog)
-        self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_entry)
+        self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_vyst_entry)
 
         self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
         self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
@@ -112,7 +113,153 @@ class ExponatDBMS(QMainWindow):
                 self.ui_create_entry_dialog.vuz.setCurrentIndex(index)
                 self.ui_create_entry_dialog.vuz.blockSignals(False)
 
-    def create_entry(self):
+    def update_vyst_button_action(self):
+        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
+        if current_widget is not None:  # Проверяем, что текущий виджет существует
+            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
+            model = current_table.selectionModel().model()
+            if isinstance(current_table, QTableView):
+                selected_row = current_table.selectionModel().currentIndex().row()
+
+                if selected_row >= 0:  # Проверяем, что строка выделена
+                    self.open_update_entry_dialog(model, selected_row)  # Передаем номер строки
+                else:
+                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
+            else:
+                QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
+        else:
+            QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
+
+    def open_update_entry_dialog(self, model, selected_row):
+        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.ui_create_entry_dialog = Ui_add_zapis_dialog()
+        self.ui_create_entry_dialog.setupUi(self.new_dialog)
+        self.ui_create_entry_dialog.save_btn.clicked.connect(self.update_vyst_entry)
+
+        self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
+        self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
+
+        Data.close_connection()
+        with Session() as session:
+        # Извлекаем все записи из таблицы Vuz
+            vuz_records = session.query(VuzBase).all()
+        Data.create_connection()
+        # Заполняем оба ComboBox
+        for vuz in vuz_records:
+            self.ui_create_entry_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
+            self.ui_create_entry_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
+
+        row_data = self.get_selected_row_data(model, selected_row)
+        exp_est = {
+            "Е": "Есть",
+            "П": "Планируется",
+            "Н": "Нет"
+        }
+        prizn = {
+            "Е": "Тематический план",
+            "М": "НТП"
+        }
+
+        self.ui_create_entry_dialog.codvuz.setCurrentText(str(row_data[1]))
+        self.ui_create_entry_dialog.priznak.setCurrentText(prizn[row_data[2]])
+        self.ui_create_entry_dialog.reg_number.setText(row_data[3])
+        self.ui_create_entry_dialog.nir_name.setText(row_data[4])
+        self.ui_create_entry_dialog.grnti.setText(row_data[5])
+        self.ui_create_entry_dialog.nir_ruk.setText(row_data[6])
+        self.ui_create_entry_dialog.ruk_doljnost.setText(row_data[7])
+        self.ui_create_entry_dialog.ruk_zvanie.setText(row_data[8])
+        self.ui_create_entry_dialog.ruk_stepen.setText(row_data[9])
+        self.ui_create_entry_dialog.exponat_est.setCurrentText(exp_est[row_data[10]])
+        self.ui_create_entry_dialog.vistavka.setText(row_data[11])
+        self.ui_create_entry_dialog.exponat_name.setText(row_data[12])
+
+        Data.close_connection()
+        current_obj = ExpositionBase.get_by_name_2(row_data[1], row_data[3])
+        Data.create_connection()
+        print(row_data[1], row_data[3])
+        print(current_obj)
+
+        self.ui_create_entry_dialog.save_btn.clicked.connect(self.update_vyst_entry)
+        self.current_obj = current_obj
+        self.new_dialog.setFixedSize(561, 664)
+        self.new_dialog.setModal(True)
+        self.new_dialog.show()
+
+    def get_selected_row_data(self, model, selected_row):
+        if selected_row is not None:
+            # Получаем данные из всех столбцов выбранной строки
+            record = model.record(selected_row)
+            row_data = [record.value(i) for i in range(model.columnCount())]
+            print("Данные выбранной строки:", row_data)
+            return row_data
+        else:
+            print("Строка не выбрана")
+            return []
+
+    def update_vyst_entry(self):
+        current_obj = self.current_obj
+        exp_est = {
+            "Есть": "Е",
+            "Планируется": "П",
+            "Нет": "Н"
+        }
+        prizn = {
+            "Тематический план": "Е",
+            "НТП": "М"
+        }
+        codvuz = self.ui_create_entry_dialog.codvuz.currentText()
+        priznak = prizn[self.ui_create_entry_dialog.priznak.currentText()]
+        reg_number = self.ui_create_entry_dialog.reg_number.text()
+        nir_name = self.ui_create_entry_dialog.nir_name.text()
+        grnti = self.ui_create_entry_dialog.grnti.text()
+        nir_ruk = self.ui_create_entry_dialog.grnti.text()
+        ruk_doljnost = self.ui_create_entry_dialog.ruk_doljnost.text()
+        ruk_zvanie = self.ui_create_entry_dialog.ruk_zvanie.text()
+        ruk_stepen = self.ui_create_entry_dialog.ruk_stepen.text()
+        exponat_est = exp_est[self.ui_create_entry_dialog.exponat_est.currentText()]
+        vistavka = self.ui_create_entry_dialog.vistavka.text()
+        exponat_name = self.ui_create_entry_dialog.exponat_name.text()
+
+        Data.close_connection()
+
+        # new_vyst = ExpositionBase(codvuz=codvuz, type=priznak, regnumber=reg_number, subject=nir_name,
+        #                           grnti=grnti, bossname=nir_ruk, boss_position=ruk_doljnost,
+        #                           boss_academic_rank=ruk_zvanie, boss_scientific_degree=ruk_stepen,
+        #                           exhitype=exponat_est, vystavki=vistavka, exponat=exponat_name)
+
+        with Session() as session:
+            try:
+                current_obj.codvuz = codvuz
+                # print(codvuz)
+                current_obj.type = priznak
+                # print(priznak)
+                current_obj.regnumber = reg_number
+                # print(reg_number)
+                current_obj.subject = nir_name
+                current_obj.grnti = grnti
+                current_obj.bossname = nir_ruk
+                current_obj.boss_position = ruk_doljnost
+                current_obj.boss_academic_rank = ruk_zvanie
+                current_obj.boss_scientific_degree = ruk_stepen
+                current_obj.exhitype = exponat_est
+                current_obj.vystavki = vistavka
+                current_obj.exponat = exponat_name
+                session.merge(current_obj)
+            except:
+                session.rollback()
+                raise
+            else:
+                session.commit()
+        Data.create_connection()
+
+        if not self.vyst_mo_table_model.submitAll():
+            print("Ошибка добавления записи:", self.vyst_mo_table_model.lastError().text())
+        if self.vyst_mo_table_model.select():
+            print("kaef")
+
+        self.new_dialog.close()
+
+    def create_vyst_entry(self):
         exp_est = {
             "Есть": "Е",
             "Планируется": "П",
@@ -726,7 +873,7 @@ class ExponatDBMS(QMainWindow):
             model.select()  # Перезагружаем данные в исходном порядке
             self.sort_states[table_name][logicalIndex] = None
 
-    def open_confirm_dialog(self, selected_row):
+    def open_delete_confirm_dialog(self, selected_row):
         self.confirm_dialog = QDialog()  # Теперь должно работать
         self.ui_confirm_dialog = Ui_Dialog()
         self.ui_confirm_dialog.setupUi(self.confirm_dialog)
@@ -751,7 +898,7 @@ class ExponatDBMS(QMainWindow):
                 selected_row = current_table.selectionModel().currentIndex().row()
 
                 if selected_row >= 0:  # Проверяем, что строка выделена
-                    self.open_confirm_dialog(selected_row)  # Передаем номер строки
+                    self.open_delete_confirm_dialog(selected_row)  # Передаем номер строки
                 else:
                     QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
             else:

@@ -2,6 +2,7 @@ from typing import Optional
 
 from sqlalchemy import Integer, String, ForeignKey, CHAR, select, Column
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedColumn, InstrumentedAttribute, relationship
+from sqlalchemy import and_
 
 from connection import Session
 
@@ -12,7 +13,7 @@ class Base(DeclarativeBase):
     #     return select(cls).where(column)
 
     @classmethod
-    def get_column_values(cls, session: Session, column: InstrumentedAttribute):
+    def get_column_values(cls, column: InstrumentedAttribute):
         # Создаем запрос с использованием select()
         stmt = select(column)
 
@@ -21,6 +22,13 @@ class Base(DeclarativeBase):
             results = session.execute(stmt).scalars().all()
 
         return results
+
+    @classmethod
+    def get_by_name(cls, _id: int):
+        with Session() as session:
+            statement = select(cls).where(cls.id == _id)
+            db_object = session.scalars(statement).one()
+        return db_object
 
 
 class VuzBase(Base):
@@ -70,6 +78,13 @@ class ExpositionBase(Base):
     exponat: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     vuz = relationship("VuzBase", back_populates="vysts")
+
+    @classmethod
+    def get_by_name_2(cls, codvuz: str, regnumber: str):
+        with Session() as session:
+            statement = select(cls).where(and_(cls.codvuz == codvuz, cls.regnumber == regnumber))
+            db_object = session.scalars(statement).one()
+        return db_object
 
     # @staticmethod
     # def create_user(user: ExpositionBase, session) -> None:
