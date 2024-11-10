@@ -1,12 +1,14 @@
 import sys
-# from typing import re
 
 import PySide6
 from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
+from PySide6.QtGui import QAction, QStandardItemModel, QStandardItem
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
                                QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
                                QMessageBox, QDialog)
 from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel, QRegularExpression
+                               QMessageBox, QDialog, QTabWidget, QTableWidgetItem, QTableWidget)
+from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel, QSqlRecord
 from sqlalchemy import create_engine
@@ -68,6 +70,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         self.ui.delete_btn.clicked.connect(self.delete_button_action)
         self.ui.update_btn.clicked.connect(self.update_vyst_button_action)
+
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
@@ -819,11 +822,11 @@ class ExponatDBMS(QMainWindow):
         layout = QHBoxLayout()
 
         # Label
-        label = QLabel(label_text)
+        label = QLabel(label_text, self)
         layout.addWidget(label)
 
         # Создаем QComboBox для уникальных значений из выбранной колонки
-        combo_box = QComboBox()
+        combo_box = QComboBox(self)
         unique_values = self.get_unique_values_for_column(label_text)
 
         if unique_values:
@@ -833,7 +836,7 @@ class ExponatDBMS(QMainWindow):
         combo_box.setCurrentText("")  # Устанавливаем пустое значение по умолчанию
 
         # Устанавливаем подсказку в поле ввода
-        combo_box.lineEdit().setPlaceholderText("вводите через запятую")
+        combo_box.lineEdit().setPlaceholderText("вводите через точку с запятой")
 
         # Связываем действие при вводе значений
         combo_box.lineEdit().returnPressed.connect(self.apply_filters)
@@ -841,7 +844,7 @@ class ExponatDBMS(QMainWindow):
         layout.addWidget(combo_box)
 
         # Кнопка для очистки фильтра
-        clear_button = QPushButton("✖️")
+        clear_button = QPushButton("✖️", self)
         clear_button.setFixedSize(25, 25)
         clear_button.clicked.connect(lambda: self.remove_filter_input(label_text, layout))
         layout.addWidget(clear_button)
@@ -849,6 +852,7 @@ class ExponatDBMS(QMainWindow):
         # Добавляем отступы для улучшения внешнего вида
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(10)
+
 
         return layout
 
@@ -877,11 +881,13 @@ class ExponatDBMS(QMainWindow):
 
             if filter_value:
                 # Split values in case of multiple inputs (e.g., by commas)
-                filter_values = [val.strip() for val in filter_value.split(',') if val.strip()]
+                filter_values = [val.strip() for val in filter_value.split(';') if val.strip()]
                 filter_conditions[filter_key] = filter_values
 
         # Apply filters to the current model and show rows accordingly
         self.filter_table(filter_conditions)
+
+
 
     def filter_table(self, filter_conditions):
         """Apply filters to the currently selected table."""
@@ -1011,6 +1017,8 @@ class ExponatDBMS(QMainWindow):
         for index, header in enumerate(headers):
             model.setHeaderData(index + 1, Qt.Orientation.Horizontal, header)
 
+
+
     def clear_filter_input_fields(self):
         """Clears all filter input fields when switching tables."""
         # Удаление всех полей ввода фильтров из макета
@@ -1105,6 +1113,41 @@ class ExponatDBMS(QMainWindow):
         QApplication.closeAllWindows()
 
 
+
+    def update_filter_input_field(self):
+        selected_filter = self.ui.add_filters_cb.currentText()
+
+        # Удаляем пустые поля перед добавлением нового фильтра
+        self.remove_empty_filter_fields()
+
+        # Добавляем новый фильтр, если его еще нет
+        if selected_filter and selected_filter not in self.filter_fields:
+            new_filter_layout = self.create_filter_input(selected_filter)
+            self.filter_fields[selected_filter] = new_filter_layout
+            self.rebuild_filter_grid()
+
+    def remove_empty_filter_fields(self):
+        # Удаляем все пустые поля фильтров
+        empty_filters = [key for key, layout in self.filter_fields.items()
+                         if not layout.itemAt(1).widget().currentText().strip()]
+
+        for filter_name in empty_filters:
+            self.remove_filter(filter_name)
+
+    def remove_filter(self, filter_name):
+        if filter_name in self.filter_fields:
+            layout_to_remove = self.filter_fields.pop(filter_name)
+
+            # Удаляем элементы интерфейса
+            for i in reversed(range(layout_to_remove.count())):
+                widget = layout_to_remove.itemAt(i).widget()
+                if widget is not None:
+                    widget.setParent(None)
+
+            # Перестроение сетки после удаления
+            self.rebuild_filter_grid()
+
+
 class NonEditableSqlTableModel(QSqlTableModel):
     def flags(self, index):
         return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
@@ -1116,3 +1159,5 @@ if __name__ == '__main__':
     window = ExponatDBMS()
     window.show()
     sys.exit(app.exec())
+
+
