@@ -39,7 +39,7 @@ class Ui_add_zapis_dialog(object):
         self.save_btn.setFont(font1)
         self.layoutWidget = QWidget(add_zapis_dialog)
         self.layoutWidget.setObjectName(u"layoutWidget")
-        self.layoutWidget.setGeometry(QRect(10, 50, 541, 53))
+        self.layoutWidget.setGeometry(QRect(11, 51, 401, 53))
         self.verticalLayout_2 = QVBoxLayout(self.layoutWidget)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -60,40 +60,40 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_2.addWidget(self.vuz)
 
-        self.widget = QWidget(add_zapis_dialog)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(10, 470, 271, 61))
-        self.verticalLayout = QVBoxLayout(self.widget)
+        self.layoutWidget1 = QWidget(add_zapis_dialog)
+        self.layoutWidget1.setObjectName(u"layoutWidget1")
+        self.layoutWidget1.setGeometry(QRect(10, 490, 271, 61))
+        self.verticalLayout = QVBoxLayout(self.layoutWidget1)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.label_7 = QLabel(self.widget)
+        self.label_7 = QLabel(self.layoutWidget1)
         self.label_7.setObjectName(u"label_7")
         self.label_7.setMaximumSize(QSize(16777215, 16777215))
         self.label_7.setFont(font2)
 
         self.verticalLayout.addWidget(self.label_7)
 
-        self.nir_ruk = QLineEdit(self.widget)
+        self.nir_ruk = QLineEdit(self.layoutWidget1)
         self.nir_ruk.setObjectName(u"nir_ruk")
         self.nir_ruk.setFont(font3)
 
         self.verticalLayout.addWidget(self.nir_ruk)
 
-        self.widget1 = QWidget(add_zapis_dialog)
-        self.widget1.setObjectName(u"widget1")
-        self.widget1.setGeometry(QRect(290, 410, 261, 170))
-        self.verticalLayout_10 = QVBoxLayout(self.widget1)
+        self.layoutWidget2 = QWidget(add_zapis_dialog)
+        self.layoutWidget2.setObjectName(u"layoutWidget2")
+        self.layoutWidget2.setGeometry(QRect(290, 430, 261, 170))
+        self.verticalLayout_10 = QVBoxLayout(self.layoutWidget2)
         self.verticalLayout_10.setObjectName(u"verticalLayout_10")
         self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_7 = QVBoxLayout()
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-        self.label_8 = QLabel(self.widget1)
+        self.label_8 = QLabel(self.layoutWidget2)
         self.label_8.setObjectName(u"label_8")
         self.label_8.setFont(font2)
 
         self.verticalLayout_7.addWidget(self.label_8)
 
-        self.ruk_doljnost = QLineEdit(self.widget1)
+        self.ruk_doljnost = QLineEdit(self.layoutWidget2)
         self.ruk_doljnost.setObjectName(u"ruk_doljnost")
         self.ruk_doljnost.setFont(font3)
 
@@ -104,13 +104,13 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_8 = QVBoxLayout()
         self.verticalLayout_8.setObjectName(u"verticalLayout_8")
-        self.label_9 = QLabel(self.widget1)
+        self.label_9 = QLabel(self.layoutWidget2)
         self.label_9.setObjectName(u"label_9")
         self.label_9.setFont(font2)
 
         self.verticalLayout_8.addWidget(self.label_9)
 
-        self.ruk_zvanie = QLineEdit(self.widget1)
+        self.ruk_zvanie = QLineEdit(self.layoutWidget2)
         self.ruk_zvanie.setObjectName(u"ruk_zvanie")
         self.ruk_zvanie.setFont(font3)
 
@@ -121,13 +121,13 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_9 = QVBoxLayout()
         self.verticalLayout_9.setObjectName(u"verticalLayout_9")
-        self.label_10 = QLabel(self.widget1)
+        self.label_10 = QLabel(self.layoutWidget2)
         self.label_10.setObjectName(u"label_10")
         self.label_10.setFont(font2)
 
         self.verticalLayout_9.addWidget(self.label_10)
 
-        self.ruk_stepen = QLineEdit(self.widget1)
+        self.ruk_stepen = QLineEdit(self.layoutWidget2)
         self.ruk_stepen.setObjectName(u"ruk_stepen")
         self.ruk_stepen.setFont(font3)
 
@@ -136,21 +136,21 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_10.addLayout(self.verticalLayout_9)
 
-        self.widget2 = QWidget(add_zapis_dialog)
-        self.widget2.setObjectName(u"widget2")
-        self.widget2.setGeometry(QRect(10, 230, 541, 170))
-        self.verticalLayout_14 = QVBoxLayout(self.widget2)
+        self.layoutWidget3 = QWidget(add_zapis_dialog)
+        self.layoutWidget3.setObjectName(u"layoutWidget3")
+        self.layoutWidget3.setGeometry(QRect(10, 250, 541, 170))
+        self.verticalLayout_14 = QVBoxLayout(self.layoutWidget3)
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
         self.verticalLayout_14.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_4 = QVBoxLayout()
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.label_4 = QLabel(self.widget2)
+        self.label_4 = QLabel(self.layoutWidget3)
         self.label_4.setObjectName(u"label_4")
         self.label_4.setFont(font2)
 
         self.verticalLayout_4.addWidget(self.label_4)
 
-        self.nir_name = QLineEdit(self.widget2)
+        self.nir_name = QLineEdit(self.layoutWidget3)
         self.nir_name.setObjectName(u"nir_name")
         self.nir_name.setFont(font3)
 
@@ -161,13 +161,13 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_12 = QVBoxLayout()
         self.verticalLayout_12.setObjectName(u"verticalLayout_12")
-        self.label_12 = QLabel(self.widget2)
+        self.label_12 = QLabel(self.layoutWidget3)
         self.label_12.setObjectName(u"label_12")
         self.label_12.setFont(font2)
 
         self.verticalLayout_12.addWidget(self.label_12)
 
-        self.vistavka = QLineEdit(self.widget2)
+        self.vistavka = QLineEdit(self.layoutWidget3)
         self.vistavka.setObjectName(u"vistavka")
         self.vistavka.setFont(font3)
 
@@ -178,13 +178,13 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_13 = QVBoxLayout()
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
-        self.label_13 = QLabel(self.widget2)
+        self.label_13 = QLabel(self.layoutWidget3)
         self.label_13.setObjectName(u"label_13")
         self.label_13.setFont(font2)
 
         self.verticalLayout_13.addWidget(self.label_13)
 
-        self.exponat_name = QLineEdit(self.widget2)
+        self.exponat_name = QLineEdit(self.layoutWidget3)
         self.exponat_name.setObjectName(u"exponat_name")
         self.exponat_name.setFont(font3)
 
@@ -193,23 +193,23 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_14.addLayout(self.verticalLayout_13)
 
-        self.widget3 = QWidget(add_zapis_dialog)
-        self.widget3.setObjectName(u"widget3")
-        self.widget3.setGeometry(QRect(10, 110, 401, 117))
-        self.verticalLayout_15 = QVBoxLayout(self.widget3)
+        self.layoutWidget4 = QWidget(add_zapis_dialog)
+        self.layoutWidget4.setObjectName(u"layoutWidget4")
+        self.layoutWidget4.setGeometry(QRect(10, 120, 401, 117))
+        self.verticalLayout_15 = QVBoxLayout(self.layoutWidget4)
         self.verticalLayout_15.setObjectName(u"verticalLayout_15")
         self.verticalLayout_15.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.label_3 = QLabel(self.widget3)
+        self.label_3 = QLabel(self.layoutWidget4)
         self.label_3.setObjectName(u"label_3")
         self.label_3.setFont(font2)
 
         self.verticalLayout_3.addWidget(self.label_3)
 
-        self.priznak = QComboBox(self.widget3)
+        self.priznak = QComboBox(self.layoutWidget4)
         self.priznak.addItem("")
         self.priznak.addItem("")
         self.priznak.setObjectName(u"priznak")
@@ -222,13 +222,13 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_11 = QVBoxLayout()
         self.verticalLayout_11.setObjectName(u"verticalLayout_11")
-        self.label_11 = QLabel(self.widget3)
+        self.label_11 = QLabel(self.layoutWidget4)
         self.label_11.setObjectName(u"label_11")
         self.label_11.setFont(font2)
 
         self.verticalLayout_11.addWidget(self.label_11)
 
-        self.exponat_est = QComboBox(self.widget3)
+        self.exponat_est = QComboBox(self.layoutWidget4)
         self.exponat_est.addItem("")
         self.exponat_est.addItem("")
         self.exponat_est.addItem("")
@@ -247,13 +247,13 @@ class Ui_add_zapis_dialog(object):
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.verticalLayout_6 = QVBoxLayout()
         self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-        self.label_6 = QLabel(self.widget3)
+        self.label_6 = QLabel(self.layoutWidget4)
         self.label_6.setObjectName(u"label_6")
         self.label_6.setFont(font2)
 
         self.verticalLayout_6.addWidget(self.label_6)
 
-        self.grnti = QLineEdit(self.widget3)
+        self.grnti = QLineEdit(self.layoutWidget4)
         self.grnti.setObjectName(u"grnti")
         self.grnti.setFont(font3)
 
@@ -264,13 +264,13 @@ class Ui_add_zapis_dialog(object):
 
         self.verticalLayout_5 = QVBoxLayout()
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-        self.label_5 = QLabel(self.widget3)
+        self.label_5 = QLabel(self.layoutWidget4)
         self.label_5.setObjectName(u"label_5")
         self.label_5.setFont(font2)
 
         self.verticalLayout_5.addWidget(self.label_5)
 
-        self.reg_number = QLineEdit(self.widget3)
+        self.reg_number = QLineEdit(self.layoutWidget4)
         self.reg_number.setObjectName(u"reg_number")
         self.reg_number.setFont(font3)
 
@@ -281,6 +281,26 @@ class Ui_add_zapis_dialog(object):
 
 
         self.verticalLayout_15.addLayout(self.horizontalLayout_2)
+
+        self.widget = QWidget(add_zapis_dialog)
+        self.widget.setObjectName(u"widget")
+        self.widget.setGeometry(QRect(430, 50, 81, 53))
+        self.verticalLayout_16 = QVBoxLayout(self.widget)
+        self.verticalLayout_16.setObjectName(u"verticalLayout_16")
+        self.verticalLayout_16.setContentsMargins(0, 0, 0, 0)
+        self.label_14 = QLabel(self.widget)
+        self.label_14.setObjectName(u"label_14")
+        self.label_14.setMaximumSize(QSize(123123, 123123))
+        self.label_14.setFont(font2)
+
+        self.verticalLayout_16.addWidget(self.label_14)
+
+        self.codvuz = QComboBox(self.widget)
+        self.codvuz.setObjectName(u"codvuz")
+        self.codvuz.setMaximumSize(QSize(123123, 123123))
+        self.codvuz.setFont(font3)
+
+        self.verticalLayout_16.addWidget(self.codvuz)
 
 
         self.retranslateUi(add_zapis_dialog)
@@ -332,5 +352,6 @@ class Ui_add_zapis_dialog(object):
         self.label_5.setText(QCoreApplication.translate("add_zapis_dialog", u"\u0420\u0435\u0433. \u043d\u043e\u043c\u0435\u0440 \u041d\u0418\u0420", None))
         self.reg_number.setText("")
         self.reg_number.setPlaceholderText(QCoreApplication.translate("add_zapis_dialog", u"183", None))
+        self.label_14.setText(QCoreApplication.translate("add_zapis_dialog", u"\u041a\u043e\u0434 \u0412\u0423\u0417\u0430", None))
     # retranslateUi
 

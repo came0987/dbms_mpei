@@ -1,19 +1,27 @@
 import sys
+# from typing import re
 
 import PySide6
+from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QWidget, QComboBox, QLineEdit, QPushButton,
                                QHBoxLayout, QVBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
                                QMessageBox, QDialog)
-from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel
+from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel, QRegularExpression
 from PySide6.QtWidgets import QHeaderView, QTableView
-from PySide6.QtSql import QSqlTableModel
-from connection import Data
+from PySide6.QtSql import QSqlTableModel, QSqlRecord
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from connection import Session, Data
+# from database import engine
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
+from table_models import VuzBase, ExpositionBase, GrntiBase
 
 
 class ExponatDBMS(QMainWindow):
+
     def __init__(self):
         super(ExponatDBMS, self).__init__()
         self.ui = Ui_MainWindow()
@@ -28,7 +36,6 @@ class ExponatDBMS(QMainWindow):
         self.filter_input_layout = QGridLayout()  # Layout for the filter input field
         self.ui.toplevel_layout.addLayout(self.filter_input_layout)  # Добавляем его в главный макет
 
-
         self.init_tables()
         self.ui.tables_menu.triggered.connect(self.set_current_table)
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
@@ -39,10 +46,8 @@ class ExponatDBMS(QMainWindow):
             "grntirub_table": {},
             "svod_table": {}
         }
-        self.init_tables()
         self.ui.tables_menu.triggered.connect(self.set_current_table)
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
-
 
         self.vyst_mo_proxy_model = QSortFilterProxyModel(self)
         self.vuz_proxy_model = QSortFilterProxyModel(self)
@@ -61,18 +66,276 @@ class ExponatDBMS(QMainWindow):
 
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         self.ui.delete_btn.clicked.connect(self.delete_button_action)
+        self.ui.update_btn.clicked.connect(self.update_vyst_button_action)
 
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_entry_dialog = Ui_add_zapis_dialog()
         self.ui_create_entry_dialog.setupUi(self.new_dialog)
-        self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_entry)
-        self.ui_create_entry_dialog.vuz.addItems(self.get_column_values(self.ui.vuz_table, "Название ВУЗа"))
+        self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_vyst_entry)
+
+        self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
+        self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
+
+        self.ui_create_entry_dialog.vuz.setEditable(True)
+        self.ui_create_entry_dialog.codvuz.setEditable(True)
+        self.ui_create_entry_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")  # Разрешаем только буквы и пробелы
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+        validator_1 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_doljnost)
+        self.ui_create_entry_dialog.ruk_doljnost.setValidator(validator_1)
+        validator_2 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_zvanie)
+        self.ui_create_entry_dialog.ruk_zvanie.setValidator(validator_2)
+        validator_3 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_stepen)
+        self.ui_create_entry_dialog.ruk_stepen.setValidator(validator_3)
+
+        Data.close_connection()
+        with Session() as session:
+        # Извлекаем все записи из таблицы Vuz
+            vuz_records = session.query(VuzBase).all()
+        Data.create_connection()
+        # Заполняем оба ComboBox
+        for vuz in vuz_records:
+            self.ui_create_entry_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
+            self.ui_create_entry_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
+
+        # Заполняем ComboBox значениями
+        vuz_list = [vuz.z1 for vuz in vuz_records]
+        codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
+
+        # self.ui_create_entry_dialog.vuz.addItems(vuz_list)
+        # self.ui_create_entry_dialog.codvuz.addItems(codvuz_list)
+
+        # Настройка комплитеров после заполнения ComboBox
+        vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
+        codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
+
+        vuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        codvuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+
+        self.ui_create_entry_dialog.vuz.setCompleter(vuz_completer)
+        self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
+
+        # Ограничиваем ввод только существующими значениями
+        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(self.validate_vuz_input)
+        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(self.validate_codvuz_input)
+
+        # Регулярное выражение для разрешения только букв в nir_ruk
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+
+        # print(VuzBase.get_column_values(session, VuzBase.z1))
+        # self.ui_create_entry_dialog.vuz.addItems(VuzBase.get_column_values(session, VuzBase.z1))#self.get_column_values(self.ui.vuz_table, "Название ВУЗа"))
         self.new_dialog.setFixedSize(561, 664)
         self.new_dialog.setModal(True)
         self.new_dialog.show()
 
-    def create_entry(self):
+    def validate_grnti_prefix(self, text):
+        # Проверка длины текста и завершение проверки, если недостаточно символов
+        if len(text) < 2:
+            return
+
+        # Извлекаем первые две цифры
+        prefix = text[:2]
+
+        # Проверяем наличие префикса в базе данных
+        Data.close_connection()
+        with Session() as session:
+            exists = session.query(GrntiBase).filter_by(codrub=int(prefix)).first() is not None
+        Data.create_connection()
+
+        if not exists:
+            # Если префикс отсутствует в базе данных, запрещаем дальнейший ввод
+            self.ui_create_entry_dialog.grnti.blockSignals(True)
+            self.ui_create_entry_dialog.grnti.setText(prefix)
+            self.ui_create_entry_dialog.grnti.blockSignals(False)
+
+    def validate_vuz_input(self):
+        input_text = self.ui_create_entry_dialog.vuz.currentText()
+        if self.ui_create_entry_dialog.vuz.findText(input_text) == -1:
+            # Если введенное значение не найдено, сбрасываем поле
+            self.ui_create_entry_dialog.vuz.setCurrentIndex(-1)
+
+    def validate_codvuz_input(self):
+        input_text = self.ui_create_entry_dialog.codvuz.currentText()
+        if self.ui_create_entry_dialog.codvuz.findText(input_text) == -1:
+            # Если введенное значение не найдено, сбрасываем поле
+            self.ui_create_entry_dialog.codvuz.setCurrentIndex(-1)
+
+    def auto_insert_dots(self):
+        text = self.ui_create_entry_dialog.grnti.text().replace(".", "")  # Убираем все точки перед обработкой
+        formatted_text = ""
+
+        # Добавляем точку после каждой пары цифр, пока текст не станет "xx.xx.xx"
+        for i in range(len(text)):
+            if i > 0 and i % 2 == 0:
+                formatted_text += "."
+            formatted_text += text[i]
+
+        # Ограничиваем ввод до 8 символов (формат "xx.xx.xx")
+        if len(formatted_text) > 8:
+            formatted_text = formatted_text[:8]
+
+        # Обновляем текст в поле и курсор в конце текста
+        self.ui_create_entry_dialog.grnti.blockSignals(True)  # Отключаем сигнал, чтобы избежать рекурсии
+        self.ui_create_entry_dialog.grnti.setText(formatted_text)
+        self.ui_create_entry_dialog.grnti.blockSignals(False)
+        self.ui_create_entry_dialog.grnti.setCursorPosition(len(formatted_text))
+
+    def sync_codvuz_combo(self):
+        # Получаем codvuz, связанный с текущим vuzname
+        selected_codvuz = self.ui_create_entry_dialog.vuz.currentData()
+        # Находим и устанавливаем соответствующий элемент в codvuz_combo
+        if selected_codvuz is not None:
+            index = self.ui_create_entry_dialog.codvuz.findText(selected_codvuz)
+            if index != -1:
+                self.ui_create_entry_dialog.codvuz.blockSignals(True)
+                self.ui_create_entry_dialog.codvuz.setCurrentIndex(index)
+                self.ui_create_entry_dialog.codvuz.blockSignals(False)
+
+    def sync_vuz_combo(self):
+        # Получаем vuzname, связанный с текущим codvuz
+        selected_vuzname = self.ui_create_entry_dialog.codvuz.currentData()
+        # Находим и устанавливаем соответствующий элемент в vuzname_combo
+        if selected_vuzname is not None:
+            index = self.ui_create_entry_dialog.vuz.findText(selected_vuzname)
+            if index != -1:
+                self.ui_create_entry_dialog.vuz.blockSignals(True)
+                self.ui_create_entry_dialog.vuz.setCurrentIndex(index)
+                self.ui_create_entry_dialog.vuz.blockSignals(False)
+
+    def update_vyst_button_action(self):
+        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
+        if current_widget is not None:  # Проверяем, что текущий виджет существует
+            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
+            model = current_table.selectionModel().model()
+            if isinstance(current_table, QTableView):
+                selected_row = current_table.selectionModel().currentIndex().row()
+
+                if selected_row >= 0:  # Проверяем, что строка выделена
+                    self.open_update_entry_dialog(model, selected_row)  # Передаем номер строки
+                else:
+                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
+            else:
+                QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
+        else:
+            QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
+
+    def open_update_entry_dialog(self, model, selected_row):
+        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.ui_create_entry_dialog = Ui_add_zapis_dialog()
+        self.ui_create_entry_dialog.setupUi(self.new_dialog)
+        self.ui_create_entry_dialog.save_btn.clicked.connect(self.update_vyst_entry)
+
+        self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
+        self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
+
+        self.ui_create_entry_dialog.vuz.setEditable(True)
+        self.ui_create_entry_dialog.codvuz.setEditable(True)
+        self.ui_create_entry_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")  # Разрешаем только буквы и пробелы
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+        validator_1 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_doljnost)
+        self.ui_create_entry_dialog.ruk_doljnost.setValidator(validator_1)
+        validator_2 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_zvanie)
+        self.ui_create_entry_dialog.ruk_zvanie.setValidator(validator_2)
+        validator_3 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_stepen)
+        self.ui_create_entry_dialog.ruk_stepen.setValidator(validator_3)
+
+        Data.close_connection()
+        with Session() as session:
+        # Извлекаем все записи из таблицы Vuz
+            vuz_records = session.query(VuzBase).all()
+        Data.create_connection()
+        # Заполняем оба ComboBox
+        for vuz in vuz_records:
+            self.ui_create_entry_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
+            self.ui_create_entry_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
+
+        row_data = self.get_selected_row_data(model, selected_row)
+        exp_est = {
+            "Е": "Есть",
+            "П": "Планируется",
+            "Н": "Нет"
+        }
+        prizn = {
+            "Е": "Тематический план",
+            "М": "НТП"
+        }
+
+        self.ui_create_entry_dialog.codvuz.setCurrentText(str(row_data[1]))
+        self.ui_create_entry_dialog.priznak.setCurrentText(prizn[row_data[2]])
+        self.ui_create_entry_dialog.reg_number.setText(row_data[3])
+        self.ui_create_entry_dialog.nir_name.setText(row_data[4])
+        self.ui_create_entry_dialog.grnti.setText(row_data[5])
+        self.ui_create_entry_dialog.nir_ruk.setText(row_data[6])
+        self.ui_create_entry_dialog.ruk_doljnost.setText(row_data[7])
+        self.ui_create_entry_dialog.ruk_zvanie.setText(row_data[8])
+        self.ui_create_entry_dialog.ruk_stepen.setText(row_data[9])
+        self.ui_create_entry_dialog.exponat_est.setCurrentText(exp_est[row_data[10]])
+        self.ui_create_entry_dialog.vistavka.setText(row_data[11])
+        self.ui_create_entry_dialog.exponat_name.setText(row_data[12])
+
+        # Заполняем ComboBox значениями
+        vuz_list = [vuz.z1 for vuz in vuz_records]
+        codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
+
+        # self.ui_create_entry_dialog.vuz.addItems(vuz_list)
+        # self.ui_create_entry_dialog.codvuz.addItems(codvuz_list)
+
+        # Настройка комплитеров после заполнения ComboBox
+        vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
+        codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
+
+        vuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        codvuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+
+        self.ui_create_entry_dialog.vuz.setCompleter(vuz_completer)
+        self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
+
+        # Ограничиваем ввод только существующими значениями
+        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(self.validate_vuz_input)
+        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(self.validate_codvuz_input)
+
+        # Регулярное выражение для разрешения только букв в nir_ruk
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")
+        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
+        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+
+        Data.close_connection()
+        current_obj = ExpositionBase.get_by_name_2(row_data[1], row_data[3])
+        Data.create_connection()
+        print(row_data[1], row_data[3])
+        print(current_obj)
+
+        self.ui_create_entry_dialog.save_btn.clicked.connect(self.update_vyst_entry)
+        self.current_obj = current_obj
+        self.new_dialog.setFixedSize(561, 664)
+        self.new_dialog.setModal(True)
+        self.new_dialog.show()
+
+    def get_selected_row_data(self, model, selected_row):
+        if selected_row is not None:
+            # Получаем данные из всех столбцов выбранной строки
+            record = model.record(selected_row)
+            row_data = [record.value(i) for i in range(model.columnCount())]
+            print("Данные выбранной строки:", row_data)
+            return row_data
+        else:
+            print("Строка не выбрана")
+            return []
+
+    def update_vyst_entry(self):
+        current_obj = self.current_obj
         exp_est = {
             "Есть": "Е",
             "Планируется": "П",
@@ -82,167 +345,175 @@ class ExponatDBMS(QMainWindow):
             "Тематический план": "Е",
             "НТП": "М"
         }
-        vuz = self.ui_create_entry_dialog.vuz.currentText()
+        codvuz = self.ui_create_entry_dialog.codvuz.currentText()
+        priznak = prizn[self.ui_create_entry_dialog.priznak.currentText()]
+        reg_number = self.ui_create_entry_dialog.reg_number.text()
+        nir_name = self.ui_create_entry_dialog.nir_name.text()
+        grnti = self.ui_create_entry_dialog.grnti.text()
+        nir_ruk = self.ui_create_entry_dialog.nir_ruk.text()
+        ruk_doljnost = self.ui_create_entry_dialog.ruk_doljnost.text()
+        ruk_zvanie = self.ui_create_entry_dialog.ruk_zvanie.text()
+        ruk_stepen = self.ui_create_entry_dialog.ruk_stepen.text()
+        exponat_est = exp_est[self.ui_create_entry_dialog.exponat_est.currentText()]
+        vistavka = self.ui_create_entry_dialog.vistavka.text()
+        exponat_name = self.ui_create_entry_dialog.exponat_name.text()
+
+        Data.close_connection()
+
+        # new_vyst = ExpositionBase(codvuz=codvuz, type=priznak, regnumber=reg_number, subject=nir_name,
+        #                           grnti=grnti, bossname=nir_ruk, boss_position=ruk_doljnost,
+        #                           boss_academic_rank=ruk_zvanie, boss_scientific_degree=ruk_stepen,
+        #                           exhitype=exponat_est, vystavki=vistavka, exponat=exponat_name)
+
+        with Session() as session:
+            try:
+                current_obj.codvuz = codvuz
+                # print(codvuz)
+                current_obj.type = priznak
+                # print(priznak)
+                current_obj.regnumber = reg_number
+                # print(reg_number)
+                current_obj.subject = nir_name
+                current_obj.grnti = grnti
+                current_obj.bossname = nir_ruk
+                current_obj.boss_position = ruk_doljnost
+                current_obj.boss_academic_rank = ruk_zvanie
+                current_obj.boss_scientific_degree = ruk_stepen
+                current_obj.exhitype = exponat_est
+                current_obj.vystavki = vistavka
+                current_obj.exponat = exponat_name
+                session.merge(current_obj)
+            except:
+                session.rollback()
+                raise
+            else:
+                session.commit()
+        Data.create_connection()
+
+        if not self.vyst_mo_table_model.submitAll():
+            print("Ошибка добавления записи:", self.vyst_mo_table_model.lastError().text())
+        if self.vyst_mo_table_model.select():
+            print("kaef")
+
+        self.new_dialog.close()
+
+    def create_vyst_entry(self):
+        exp_est = {
+            "Есть": "Е",
+            "Планируется": "П",
+            "Нет": "Н"
+        }
+        prizn = {
+            "Тематический план": "Е",
+            "НТП": "М"
+        }
+        codvuz = self.ui_create_entry_dialog.codvuz.currentText()
         priznak = prizn[self.ui_create_entry_dialog.priznak.currentText()]
         reg_number = self.ui_create_entry_dialog.reg_number.text()
         nir_name = self.ui_create_entry_dialog.nir_name.text()
         grnti = self.ui_create_entry_dialog.grnti.text()
         nir_ruk = self.ui_create_entry_dialog.grnti.text()
-        nir_ruk_info = f"{self.ui_create_entry_dialog.ruk_doljnost.text()}, {self.ui_create_entry_dialog.ruk_zvanie.text()}, {self.ui_create_entry_dialog.ruk_stepen.text()}"
+        ruk_doljnost = self.ui_create_entry_dialog.ruk_doljnost.text()
+        ruk_zvanie = self.ui_create_entry_dialog.ruk_zvanie.text()
+        ruk_stepen = self.ui_create_entry_dialog.ruk_stepen.text()
         exponat_est = exp_est[self.ui_create_entry_dialog.exponat_est.currentText()]
         vistavka = self.ui_create_entry_dialog.vistavka.text()
         exponat_name = self.ui_create_entry_dialog.exponat_name.text()
-        self.ui.vyst_mo_table.setEditTriggers(QAbstractItemView.EditTrigger.AllEditTriggers)
 
-        if vuz and priznak and reg_number and nir_name and grnti and nir_ruk and nir_ruk_info and exponat_name and exponat_est and vistavka:
-            while self.vyst_mo_table_model.canFetchMore():
-                self.vyst_mo_table_model.fetchMore()
-            row_count = self.vyst_mo_table_model.rowCount()
-            self.vyst_mo_table_model.insertRow(row_count+1)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 1), int(self.get_value_from_table(self.ui.vuz_table, "Код ВУЗа", self.find_row_by_value(self.ui.vuz_table, "Название ВУЗа", vuz))))
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 2), priznak)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 3), reg_number)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 4), nir_name)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 5), grnti)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 6), nir_ruk)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 7), nir_ruk_info)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 8), exponat_est)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 9), vistavka)
-            self.vyst_mo_table_model.setData(self.vyst_mo_table_model.index(row_count, 10), exponat_name)
+        Data.close_connection()
 
-            if not self.vyst_mo_table_model.submitAll():
-                print("Ошибка добавления записи:", self.vyst_mo_table_model.lastError().text())
-            if self.vyst_mo_table_model.select():
-                print("kaef")
+        new_vyst = ExpositionBase(codvuz=codvuz, type=priznak, regnumber=reg_number, subject=nir_name,
+                                  grnti=grnti, bossname=nir_ruk, boss_position=ruk_doljnost,
+                                  boss_academic_rank=ruk_zvanie, boss_scientific_degree=ruk_stepen,
+                                  exhitype=exponat_est, vystavki=vistavka, exponat=exponat_name)
 
-            self.ui.vyst_mo_table.setModel(self.vyst_mo_table_model)
+        with Session() as session:
+            try:
+                session.add(new_vyst)
+            except:
+                session.rollback()
+                raise
+            else:
+                session.commit()
+        Data.create_connection()
+
+        if not self.vyst_mo_table_model.submitAll():
+            print("Ошибка добавления записи:", self.vyst_mo_table_model.lastError().text())
+        if self.vyst_mo_table_model.select():
+            print("kaef")
 
         self.new_dialog.close()
 
-    def open_confirm_dialog(self, selected_row):
-        self.confirm_dialog = QDialog()  # Теперь должно работать
-        self.ui_confirm_dialog = Ui_Dialog()
-        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
-        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
-   # Устанавливаем текст в QLabel
-        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+    # def find_row_by_value(self, table_view: QTableView, column_name: str, value):
+    #     # Получаем модель данных QSqlTableModel из представления QTableView
+    #     model: QSqlTableModel = table_view.model()
+    #
+    #     # Ищем индекс столбца по его имени
+    #     column_index = -1
+    #     for i in range(model.columnCount()):
+    #         if model.headerData(i, Qt.Horizontal) == column_name:
+    #             column_index = i
+    #             break
+    #
+    #     if column_index == -1:
+    #         raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+    #
+    #     # Проходим по каждой строке и проверяем значение в нужном столбце
+    #     for row in range(model.rowCount()):
+    #         cell_value = model.index(row, column_index).data()
+    #         if cell_value == value:
+    #             return row
+    #
+    #     # Если значение не найдено, возвращаем -1
+    #     return -1
 
-    # Подключаем кнопку "OK" к функции delete_record
-        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(selected_row))
+    # def get_value_from_table(self, table_view: QTableView, column_name: str, row: int):
+    #     # Получаем модель данных QSqlTableModel из представления QTableView
+    #     model: QSqlTableModel = table_view.model()
+    #
+    #     # Ищем индекс столбца по его имени
+    #     column_index = -1
+    #     for i in range(model.columnCount()):
+    #         if model.headerData(i, Qt.Horizontal) == column_name:
+    #             column_index = i
+    #             break
+    #
+    #     if column_index == -1:
+    #         raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+    #
+    #     # Проверяем, что номер строки корректный
+    #     if row < 0 or row >= model.rowCount():
+    #         raise ValueError(f"Неверный номер строки: {row}. Допустимые значения от 0 до {model.rowCount() - 1}.")
+    #
+    #     # Получаем значение ячейки по индексу строки и столбца
+    #     return model.index(row, column_index).data()
 
-    # Подключаем кнопку "Cancel" для закрытия диалога
-        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
-        self.confirm_dialog.exec_()
-        self.confirm_dialog.setModal(True)
-
-    def delete_button_action(self):
-        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
-        if current_widget is not None:  # Проверяем, что текущий виджет существует
-            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
-
-            if isinstance(current_table, QTableView):
-                selected_row = current_table.selectionModel().currentIndex().row()
-
-                if selected_row >= 0:  # Проверяем, что строка выделена
-                    self.open_confirm_dialog(selected_row)  # Передаем номер строки
-                else:
-                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
-            else:
-                QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
-        else:
-            QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
-
-    def delete_record(self, selected_row):
-    # Получаем текущий виджет QTableView
-        current_table = self.ui.db_tables.currentWidget().children()[1]
-
-        if isinstance(current_table, QTableView):
-            model = current_table.model()  # Получаем модель таблицы
-            model.removeRow(selected_row)  # Удаляем строку
-            model.submitAll()  # Применяем изменения
-            model.select()  # Обновляем данные в таблице
-
-        self.confirm_dialog.close()  # Закрываем диалог
-
-    def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
-        if reply == QMessageBox.Yes:
-            self.connection.close_all_windows()
-            event.accept()
-        else:
-            event.ignore()
-
-    def find_row_by_value(self, table_view: QTableView, column_name: str, value):
-        # Получаем модель данных QSqlTableModel из представления QTableView
-        model: QSqlTableModel = table_view.model()
-
-        # Ищем индекс столбца по его имени
-        column_index = -1
-        for i in range(model.columnCount()):
-            if model.headerData(i, Qt.Horizontal) == column_name:
-                column_index = i
-                break
-
-        if column_index == -1:
-            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
-
-        # Проходим по каждой строке и проверяем значение в нужном столбце
-        for row in range(model.rowCount()):
-            cell_value = model.index(row, column_index).data()
-            if cell_value == value:
-                return row
-
-        # Если значение не найдено, возвращаем -1
-        return -1
-
-    def get_value_from_table(self, table_view: QTableView, column_name: str, row: int):
-        # Получаем модель данных QSqlTableModel из представления QTableView
-        model: QSqlTableModel = table_view.model()
-
-        # Ищем индекс столбца по его имени
-        column_index = -1
-        for i in range(model.columnCount()):
-            if model.headerData(i, Qt.Horizontal) == column_name:
-                column_index = i
-                break
-
-        if column_index == -1:
-            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
-
-        # Проверяем, что номер строки корректный
-        if row < 0 or row >= model.rowCount():
-            raise ValueError(f"Неверный номер строки: {row}. Допустимые значения от 0 до {model.rowCount() - 1}.")
-
-        # Получаем значение ячейки по индексу строки и столбца
-        return model.index(row, column_index).data()
-
-    def get_value_by_key(self, model, key_value, key_column=0, target_column=1):
-        """
-        Возвращает значение из таблицы по ключу.
-
-        :param model: QSqlTableModel - модель данных
-        :param key_value: значение ключа (например, id)
-        :param key_column: индекс столбца ключа (по умолчанию 0)
-        :param target_column: индекс столбца, из которого нужно получить значение
-        :return: Значение из указанного столбца или None, если запись не найдена
-        """
-        # Ищем индекс строки, соответствующий ключевому значению
-        indexes = model.match(
-            model.index(0, key_column),  # Начинаем поиск с первой строки в столбце ключа
-            Qt.ItemDataRole.DisplayRole,  # Совпадение по точному значению
-            key_value,  # Значение ключа для поиска
-            1,  # Ищем только одно совпадение
-            Qt.MatchFlag.MatchExactly
-        )
-        print(indexes)
-
-        if indexes:  # Если нашлось совпадение
-            row = indexes[0].row()  # Получаем индекс строки
-            value = model.data(model.index(row, target_column))  # Получаем значение целевого столбца
-            return value
-        else:
-            return None  # Если запись не найдена
+    # def get_value_by_key(self, model, key_value, key_column=0, target_column=1):
+    #     """
+    #     Возвращает значение из таблицы по ключу.
+    #
+    #     :param model: QSqlTableModel - модель данных
+    #     :param key_value: значение ключа (например, id)
+    #     :param key_column: индекс столбца ключа (по умолчанию 0)
+    #     :param target_column: индекс столбца, из которого нужно получить значение
+    #     :return: Значение из указанного столбца или None, если запись не найдена
+    #     """
+    #     # Ищем индекс строки, соответствующий ключевому значению
+    #     indexes = model.match(
+    #         model.index(0, key_column),  # Начинаем поиск с первой строки в столбце ключа
+    #         Qt.ItemDataRole.DisplayRole,  # Совпадение по точному значению
+    #         key_value,  # Значение ключа для поиска
+    #         1,  # Ищем только одно совпадение
+    #         Qt.MatchFlag.MatchExactly
+    #     )
+    #     print(indexes)
+    #
+    #     if indexes:  # Если нашлось совпадение
+    #         row = indexes[0].row()  # Получаем индекс строки
+    #         value = model.data(model.index(row, target_column))  # Получаем значение целевого столбца
+    #         return value
+    #     else:
+    #         return None  # Если запись не найдена
     # def get_row_by_key(self, model, key_value, key_column=0):
     #     """
     #     Возвращает данные строки из QSqlTableModel по значению ключа.
@@ -282,10 +553,9 @@ class ExponatDBMS(QMainWindow):
         #     "grntirub_table": self.create_model("grntirub")
         # }
         self.vyst_mo_table_model = self.create_model("vyst_mo")
-        self.vuz_table_model = self.create_model("VUZ")
-        self.grntirub_table_model = self.create_model("grntirub")
+        self.vuz_table_model = self.create_model("vuz")
+        self.grntirub_table_model = self.create_model("grnti")
         self.svod_table_model = self.create_model("svod")
-
 
         # Устанавливаем модели и заголовки
         self.ui.vyst_mo_table.setModel(self.vyst_mo_table_model)
@@ -293,6 +563,10 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.setModel(self.grntirub_table_model)
         self.ui.svod_table.setModel(self.svod_table_model)
 
+        self.ui.svod_table.hideColumn(0)
+        self.ui.vyst_mo_table.hideColumn(0)
+        self.ui.grntirub_table.hideColumn(0)
+        self.ui.vuz_table.hideColumn(0)
 
         # Отключаем сортировку по заголовкам при первом выводе
         self.ui.vyst_mo_table.setSortingEnabled(False)
@@ -302,18 +576,24 @@ class ExponatDBMS(QMainWindow):
 
         # Настройка заголовков
         self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа",
-                                                  "Пр-к  ф. НИР", "Рег. ном. НИР", "Наименование НИР",
-                                                  "Коды  ГРНТИ", "Руководитель НИР", "Долж., Уч.З, Уч.Ст",
-                                                  "Пр-к", "Выставки", "Выставочный экспонат"])
+                                                           "Пр-к  ф. НИР", "Рег. ном. НИР", "Наименование НИР",
+                                                           "Коды  ГРНТИ", "Руководитель НИР", "Должность",
+                                                           "Ученое звание", "Ученая степень",
+                                                           "Пр-к", "Выставки", "Выставочный экспонат"])
 
-        self.set_custom_headers(self.vuz_table_model, ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокр. наим.",
-                                               "Федеральный округ", 'Город', "Статус", "№ обл.", "Область", "Категория", "Профиль"])
+        self.set_custom_headers(self.vuz_table_model,
+                                ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокр. наим.",
+                                 "Федеральный округ", 'Город', "Статус", "№ обл.", "Область", "Категория", "Профиль"])
 
         self.set_custom_headers(self.grntirub_table_model, ["Код рубрики", "Наименование рубрики"])
         self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Сокр. наим. ВУЗа",
-                                                        "Наименование НИР", "Коды  ГРНТИ", "Руководитель НИР", "Должность, ученое звание, ученая степень руководителя",
-                                                        "Рег. номер НИР", "Выставки", "Выставочный экспонат", "Признак  формы НИР", "Признак", "Название ВУЗа", "Полное наименование",
-                                               "Федеральный округ", 'Город', "Статус", "Номер области", "Область", "Категория", "Профиль"
+                                                        "Наименование НИР", "Коды  ГРНТИ", "Руководитель НИР",
+                                                        "Должность", "Ученое звание", "Ученая степень",
+                                                        "Рег. номер НИР", "Выставки", "Выставочный экспонат",
+                                                        "Признак  формы НИР", "Признак", "Название ВУЗа",
+                                                        "Полное наименование",
+                                                        "Федеральный округ", 'Город', "Статус", "Номер области",
+                                                        "Область", "Категория", "Профиль"
                                                         ])
 
         # Подключаем сортировку для каждой таблицы
@@ -338,32 +618,79 @@ class ExponatDBMS(QMainWindow):
             header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 
         self.ui.vyst_mo_table.setColumnHidden(10, True)
+        self.ui.vyst_mo_table.setEditTriggers(QAbstractItemView.EditTrigger.AllEditTriggers)
 
-    def get_column_values(self, table_view: QTableView, column_name: str) -> list:
-        # Получаем модель данных QSqlTableModel из представления QTableView
+        while self.vyst_mo_table_model.canFetchMore():
+            self.vyst_mo_table_model.fetchMore()
 
-        model: QSqlTableModel = table_view.model()
+    # def get_column_values(self, table_view: QTableView, column_name: str) -> list:
+    #     # Получаем модель данных QSqlTableModel из представления QTableView
+    #
+    #     model: QSqlTableModel = table_view.model()
+    #
+    #     # Ищем индекс столбца по его имени
+    #     column_index = -1
+    #     for i in range(model.columnCount()):
+    #         if model.headerData(i, Qt.Orientation.Horizontal) == column_name:
+    #             column_index = i
+    #             break
+    #
+    #     if column_index == -1:
+    #         raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+    #
+    #     # Список для хранения значений столбца
+    #     column_values = []
+    #
+    #     # Проходим по каждой строке и собираем значения из нужного столбца
+    #     for row in range(model.rowCount()):
+    #         value = model.index(row, column_index).data()
+    #         column_values.append(value)
+    #
+    #     return column_values
+    def set_current_table(self, checked_action):
+        """Switches the current table and resets the filters."""
+        # Очистка полей ввода фильтров при переключении таблиц
+        self.clear_filter_input_fields()
 
-        # Ищем индекс столбца по его имени
-        column_index = -1
-        for i in range(model.columnCount()):
-            if model.headerData(i, Qt.Horizontal) == column_name:
-                column_index = i
-                break
+        # Смена таблицы
+        text = checked_action.text()
+        if text == "ГРНТИ":
+            self.ui.db_tables.setCurrentIndex(3)
+            self.current_model = self.grntirub_table_model
+            self.ui.create_btn.setEnabled(True)
+            self.ui.update_btn.setEnabled(True)
+            self.ui.delete_btn.setEnabled(True)
+            # print(self.get_column_values(self.ui.grntirub_table, "Код рубрики"))
+        elif text == "Выставки":
+            self.ui.db_tables.setCurrentIndex(1)
+            self.current_model = self.vyst_mo_table_model
+            self.ui.create_btn.setEnabled(True)
+            self.ui.update_btn.setEnabled(True)
+            self.ui.delete_btn.setEnabled(True)
+            # print(self.get_column_values(self.ui.vyst_mo_table, "Признак  формы НИР"))
+        elif text == "ВУЗы":
+            self.ui.db_tables.setCurrentIndex(2)
+            self.current_model = self.vuz_table_model
+            self.ui.create_btn.setEnabled(True)
+            self.ui.update_btn.setEnabled(True)
+            self.ui.delete_btn.setEnabled(True)
+            # print(self.get_column_values(self.ui.vuz_table, "Полное наименование"))
+        elif text == "Сводная таблица":
+            self.ui.db_tables.setCurrentIndex(0)
+            self.current_model = self.svod_table_model
+            self.ui.create_btn.setEnabled(False)
+            self.ui.update_btn.setEnabled(False)
+            self.ui.delete_btn.setEnabled(False)
+            # print(self.get_column_values(self.ui.svod_table, "Руководитель НИР"))
 
-        if column_index == -1:
-            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+            #TODO ATTENTION ТЫ ТЕСТИРОВАЛ НОЧЬЮ ФУНКЦИЮ GET_COLUMN_VALUES, ОНА РАБОТАЕТ, НО ПОЧЕМУ ТО 2 РАЗА ВЫВОДИЛА КОРОЧЕ РЕЗУЛЬТАТ,
+            #СКОРЕЕ ВСЕГО СВЯЗАНО С КНОПКОЙ МЕНЮ
 
-        # Список для хранения значений столбца
-        column_values = []
+        # Обновление комбобокса с доступными колонками для фильтрации
+        self.update_filter_combobox()
 
-        # Проходим по каждой строке и собираем значения из нужного столбца
-        for row in range(model.rowCount()):
-            value = model.index(row, column_index).data()
-            column_values.append(value)
-
-        return column_values
-
+        # Показываем все строки при переключении таблиц
+        self.show_all_rows()
 
     def update_filter_input_field(self):
         selected_filter = self.ui.add_filters_cb.currentText()
@@ -481,7 +808,7 @@ class ExponatDBMS(QMainWindow):
 
     def get_unique_values_for_column(self, column_name):
         """Извлекаем уникальные значения для выбранной колонки из текущей модели."""
-        column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
+        column_index = [self.current_model.headerData(i, Qt.Orientation.Horizontal) for i in
                         range(self.current_model.columnCount())].index(column_name)
 
         unique_values = set()
@@ -519,7 +846,7 @@ class ExponatDBMS(QMainWindow):
 
             for filter_key, filter_values in filter_conditions.items():
                 # Находим индекс столбца по его имени
-                column_index = [self.current_model.headerData(i, Qt.Horizontal) for i in
+                column_index = [self.current_model.headerData(i, Qt.Orientation.Horizontal) for i in
                                 range(self.current_model.columnCount())].index(filter_key)
                 index = self.current_model.index(row, column_index)
                 data_value = self.current_model.data(index)
@@ -586,6 +913,7 @@ class ExponatDBMS(QMainWindow):
             del self.filter_fields[label_text]
             self.filter_input_layout.removeItem(layout)  # Убираем layout из отображения
             self.apply_filters()
+
     def clear_all_filters(self):
         """Сбрасываем все фильтры и показываем все строки во всех таблицах."""
         # Показываем все строки во всех таблицах
@@ -614,10 +942,9 @@ class ExponatDBMS(QMainWindow):
         # Обновляем комбобокс фильтров
         self.update_filter_combobox()
 
-
     def create_model(self, table_name: str):
         model = NonEditableSqlTableModel(self)
-        model.setEditStrategy(QSqlTableModel.OnManualSubmit)
+        model.setEditStrategy(QSqlTableModel.EditStrategy.OnManualSubmit)
         model.setTable(table_name)
         model.select()
         return model
@@ -626,61 +953,17 @@ class ExponatDBMS(QMainWindow):
         """Updates the ComboBox with currently active filters."""
         self.ui.add_filters_cb.clear()
         if self.current_model:
-            headers = [self.current_model.headerData(i, Qt.Horizontal) for i in range(self.current_model.columnCount())]
+            headers = [self.current_model.headerData(i, Qt.Orientation.Horizontal) for i in
+                       range(1, self.current_model.columnCount())]
             # Exclude currently selected filters
             for filter_key in self.filter_fields.keys():
                 headers.remove(filter_key)
             self.ui.add_filters_cb.addItems(headers)
 
-
-    def set_custom_headers(self, model, headers):
+    @staticmethod
+    def set_custom_headers(model, headers):
         for index, header in enumerate(headers):
-            model.setHeaderData(index, Qt.Horizontal, header)
-
-    def set_current_table(self, checked_action):
-        """Switches the current table and resets the filters."""
-        # Очистка полей ввода фильтров при переключении таблиц
-        self.clear_filter_input_fields()
-
-        # Смена таблицы
-        text = checked_action.text()
-        if text == "ГРНТИ":
-            self.ui.db_tables.setCurrentIndex(3)
-            self.current_model = self.grntirub_table_model
-            self.ui.create_btn.setEnabled(True)
-            self.ui.update_btn.setEnabled(True)
-            self.ui.delete_btn.setEnabled(True)
-            # print(self.get_column_values(self.ui.grntirub_table, "Код рубрики"))
-        elif text == "Выставки":
-            self.ui.db_tables.setCurrentIndex(1)
-            self.current_model = self.vyst_mo_table_model
-            self.ui.create_btn.setEnabled(True)
-            self.ui.update_btn.setEnabled(True)
-            self.ui.delete_btn.setEnabled(True)
-            # print(self.get_column_values(self.ui.vyst_mo_table, "Признак  формы НИР"))
-        elif text == "ВУЗы":
-            self.ui.db_tables.setCurrentIndex(2)
-            self.current_model = self.vuz_table_model
-            self.ui.create_btn.setEnabled(True)
-            self.ui.update_btn.setEnabled(True)
-            self.ui.delete_btn.setEnabled(True)
-            # print(self.get_column_values(self.ui.vuz_table, "Полное наименование"))
-        elif text == "Сводная таблица":
-            self.ui.db_tables.setCurrentIndex(0)
-            self.current_model = self.svod_table_model
-            self.ui.create_btn.setEnabled(False)
-            self.ui.update_btn.setEnabled(False)
-            self.ui.delete_btn.setEnabled(False)
-            # print(self.get_column_values(self.ui.svod_table, "Руководитель НИР"))
-
-            #TODO ATTENTION ТЫ ТЕСТИРОВАЛ НОЧЬЮ ФУНКЦИЮ GET_COLUMN_VALUES, ОНА РАБОТАЕТ, НО ПОЧЕМУ ТО 2 РАЗА ВЫВОДИЛА КОРОЧЕ РЕЗУЛЬТАТ,
-            #СКОРЕЕ ВСЕГО СВЯЗАНО С КНОПКОЙ МЕНЮ
-
-        # Обновление комбобокса с доступными колонками для фильтрации
-        self.update_filter_combobox()
-
-        # Показываем все строки при переключении таблиц
-        self.show_all_rows()
+            model.setHeaderData(index + 1, Qt.Orientation.Horizontal, header)
 
     def clear_filter_input_fields(self):
         """Clears all filter input fields when switching tables."""
@@ -703,7 +986,6 @@ class ExponatDBMS(QMainWindow):
 
         # Очищаем словарь фильтров
         self.filter_fields.clear()
-
 
     def handle_header_click(self, table, logicalIndex):
         # Получаем имя таблицы для правильного отслеживания состояния
@@ -729,13 +1011,73 @@ class ExponatDBMS(QMainWindow):
             model.select()  # Перезагружаем данные в исходном порядке
             self.sort_states[table_name][logicalIndex] = None
 
+    def open_delete_confirm_dialog(self, selected_row):
+        self.confirm_dialog = QDialog()  # Теперь должно работать
+        self.ui_confirm_dialog = Ui_Dialog()
+        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+        # Устанавливаем текст в QLabel
+        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+
+        # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(selected_row))
+
+        # Подключаем кнопку "Cancel" для закрытия диалога
+        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+        self.confirm_dialog.exec_()
+        self.confirm_dialog.setModal(True)
+
+    def delete_button_action(self):
+        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
+        if current_widget is not None:  # Проверяем, что текущий виджет существует
+            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
+
+            if isinstance(current_table, QTableView):
+                selected_row = current_table.selectionModel().currentIndex().row()
+
+                if selected_row >= 0:  # Проверяем, что строка выделена
+                    self.open_delete_confirm_dialog(selected_row)  # Передаем номер строки
+                else:
+                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
+            else:
+                QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
+        else:
+            QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
+
+    def delete_record(self, selected_row):
+        # Получаем текущий виджет QTableView
+        current_table = self.ui.db_tables.currentWidget().children()[1]
+
+        if isinstance(current_table, QTableView):
+            model = current_table.model()  # Получаем модель таблицы
+            model.removeRow(selected_row)  # Удаляем строку
+            model.submitAll()  # Применяем изменения
+            model.select()  # Обновляем данные в таблице
+
+        self.confirm_dialog.close()  # Закрываем диалог
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.close_all_windows()
+            event.accept()
+        else:
+            event.ignore()
+
+    def close_all_windows(self):
+        QApplication.closeAllWindows()
+
 
 class NonEditableSqlTableModel(QSqlTableModel):
     def flags(self, index):
-        return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+        return Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+    Data.create_connection()  # Устанавливаем соединение один раз в начале
     window = ExponatDBMS()
     window.show()
     sys.exit(app.exec())
