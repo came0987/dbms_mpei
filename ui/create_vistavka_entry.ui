@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>561</width>
-    <height>664</height>
+    <height>689</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -38,7 +38,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>620</y>
+     <y>650</y>
      <width>121</width>
      <height>31</height>
     </rect>
@@ -55,10 +55,10 @@
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>11</x>
-     <y>51</y>
+     <x>10</x>
+     <y>50</y>
      <width>401</width>
-     <height>53</height>
+     <height>61</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -70,7 +70,7 @@
        </font>
       </property>
       <property name="text">
-       <string>ВУЗ</string>
+       <string>ВУЗ *</string>
       </property>
      </widget>
     </item>
@@ -95,9 +95,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>490</y>
+     <y>530</y>
      <width>271</width>
-     <height>61</height>
+     <height>74</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -115,7 +115,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Руководитель НИР</string>
+       <string>Руководитель НИР *</string>
       </property>
      </widget>
     </item>
@@ -130,7 +130,7 @@
        <string/>
       </property>
       <property name="placeholderText">
-       <string>Сергей Павлович Королёв</string>
+       <string>Королёв П. К.</string>
       </property>
      </widget>
     </item>
@@ -140,12 +140,15 @@
    <property name="geometry">
     <rect>
      <x>290</x>
-     <y>430</y>
+     <y>470</y>
      <width>261</width>
-     <height>170</height>
+     <height>171</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_10">
+    <property name="spacing">
+     <number>6</number>
+    </property>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_7">
       <item>
@@ -171,7 +174,7 @@
          <string/>
         </property>
         <property name="placeholderText">
-         <string>рук.отд., зав.каф., зав.лаб., нач.отд</string>
+         <string>зав.каф.</string>
         </property>
        </widget>
       </item>
@@ -202,7 +205,7 @@
          <string/>
         </property>
         <property name="placeholderText">
-         <string>доц., проф., чл.-корр, акад. </string>
+         <string>доц.</string>
         </property>
        </widget>
       </item>
@@ -233,7 +236,7 @@
          <string/>
         </property>
         <property name="placeholderText">
-         <string>к.т.н., д.т.н., к.б.н., д.ф.-м.н.</string>
+         <string>к.т.н.</string>
         </property>
        </widget>
       </item>
@@ -245,43 +248,12 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>250</y>
+     <y>350</y>
      <width>541</width>
-     <height>170</height>
+     <height>111</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_14">
-    <item>
-     <layout class="QVBoxLayout" name="verticalLayout_4">
-      <item>
-       <widget class="QLabel" name="label_4">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Наименование НИР</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLineEdit" name="nir_name">
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="placeholderText">
-         <string>Теплофизика и теплоэнергетика</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_12">
       <item>
@@ -350,9 +322,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>120</y>
-     <width>401</width>
-     <height>117</height>
+     <y>130</y>
+     <width>411</width>
+     <height>131</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_15">
@@ -453,7 +425,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Код ГРНТИ</string>
+           <string>Код ГРНТИ *</string>
           </property>
          </widget>
         </item>
@@ -468,7 +440,7 @@
            <string/>
           </property>
           <property name="placeholderText">
-           <string>29.34.12; 02.12.32; 03.43</string>
+           <string>29.34.12; 00.12</string>
           </property>
          </widget>
         </item>
@@ -484,7 +456,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Рег. номер НИР</string>
+           <string>Рег. номер НИР *</string>
           </property>
          </widget>
         </item>
@@ -509,13 +481,13 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>430</x>
      <y>50</y>
      <width>81</width>
-     <height>53</height>
+     <height>61</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -533,7 +505,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Код ВУЗа</string>
+       <string>Код ВУЗа *</string>
       </property>
      </widget>
     </item>
@@ -553,6 +525,126 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QLabel" name="bossname_error">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>600</y>
+     <width>271</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>280</y>
+     <width>539</width>
+     <height>52</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_4">
+    <item>
+     <widget class="QLabel" name="label_4">
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Наименование НИР *</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLineEdit" name="nir_name">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="placeholderText">
+       <string>Теплофизика и теплоэнергетика</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QLabel" name="nir_error">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>330</y>
+     <width>541</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="grnti_error">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>260</y>
+     <width>191</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="reg_number_error">
+   <property name="geometry">
+    <rect>
+     <x>218</x>
+     <y>260</y>
+     <width>201</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="vuz_error">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>110</y>
+     <width>221</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="code_vuz_error">
+   <property name="geometry">
+    <rect>
+     <x>430</x>
+     <y>110</y>
+     <width>61</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
   </widget>
  </widget>
  <resources/>
