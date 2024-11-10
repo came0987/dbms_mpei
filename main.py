@@ -36,6 +36,7 @@ class ExponatDBMS(QMainWindow):
         self.filter_input_layout = QGridLayout()  # Layout for the filter input field
         self.ui.toplevel_layout.addLayout(self.filter_input_layout)  # Добавляем его в главный макет
 
+
         self.init_tables()
         self.ui.tables_menu.triggered.connect(self.set_current_table)
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
@@ -514,6 +515,116 @@ class ExponatDBMS(QMainWindow):
     #         return value
     #     else:
     #         return None  # Если запись не найдена
+    def open_delete_confirm_dialog(self, row_numbers):
+        self.confirm_dialog = QDialog() # Теперь должно работать
+        self.ui_confirm_dialog = Ui_Dialog()
+        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+
+        # Формируем текст с номерами строк
+        row_numbers_str = ", ".join(str(number) for number in row_numbers)
+        self.ui_confirm_dialog.label.setText(f"Удалить строки с номером {row_numbers_str}?")
+
+        # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(row_numbers))
+
+        # Подключаем кнопку "Cancel" для закрытия диалога
+        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+        self.confirm_dialog.exec_()
+        self.confirm_dialog.setModal(True)
+
+    def delete_record(self, row_numbers):
+        # Получаем текущий виджет QTableView
+        current_table = self.ui.db_tables.currentWidget().children()[1]
+
+        if isinstance(current_table, QTableView):
+            model = current_table.model() # Получаем модель таблицы
+        # Удаляем строки в обратном порядке, чтобы индексы не смещались
+            for row_number in sorted(row_numbers, reverse=True):
+                model.removeRow(row_number - 1) # Удаляем строку
+            model.submitAll() # Применяем изменения
+            model.select() # Обновляем данные в таблице
+
+        self.confirm_dialog.close() # Закрываем диалог
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            self.connection.close_all_windows()
+            event.accept()
+        else:
+            event.ignore()
+
+    def find_row_by_value(self, table_view: QTableView, column_name: str, value):
+        # Получаем модель данных QSqlTableModel из представления QTableView
+        model: QSqlTableModel = table_view.model()
+
+        # Ищем индекс столбца по его имени
+        column_index = -1
+        for i in range(model.columnCount()):
+            if model.headerData(i, Qt.Horizontal) == column_name:
+                column_index = i
+                break
+
+        if column_index == -1:
+            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+
+        # Проходим по каждой строке и проверяем значение в нужном столбце
+        for row in range(model.rowCount()):
+            cell_value = model.index(row, column_index).data()
+            if cell_value == value:
+                return row
+
+        # Если значение не найдено, возвращаем -1
+        return -1
+
+    def get_value_from_table(self, table_view: QTableView, column_name: str, row: int):
+        # Получаем модель данных QSqlTableModel из представления QTableView
+        model: QSqlTableModel = table_view.model()
+
+        # Ищем индекс столбца по его имени
+        column_index = -1
+        for i in range(model.columnCount()):
+            if model.headerData(i, Qt.Horizontal) == column_name:
+                column_index = i
+                break
+
+        if column_index == -1:
+            raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
+
+        # Проверяем, что номер строки корректный
+        if row < 0 or row >= model.rowCount():
+            raise ValueError(f"Неверный номер строки: {row}. Допустимые значения от 0 до {model.rowCount() - 1}.")
+
+        # Получаем значение ячейки по индексу строки и столбца
+        return model.index(row, column_index).data()
+
+    def get_value_by_key(self, model, key_value, key_column=0, target_column=1):
+        """
+        Возвращает значение из таблицы по ключу.
+
+        :param model: QSqlTableModel - модель данных
+        :param key_value: значение ключа (например, id)
+        :param key_column: индекс столбца ключа (по умолчанию 0)
+        :param target_column: индекс столбца, из которого нужно получить значение
+        :return: Значение из указанного столбца или None, если запись не найдена
+        """
+        # Ищем индекс строки, соответствующий ключевому значению
+        indexes = model.match(
+            model.index(0, key_column),  # Начинаем поиск с первой строки в столбце ключа
+            Qt.ItemDataRole.DisplayRole,  # Совпадение по точному значению
+            key_value,  # Значение ключа для поиска
+            1,  # Ищем только одно совпадение
+            Qt.MatchFlag.MatchExactly
+        )
+        print(indexes)
+
+        if indexes:  # Если нашлось совпадение
+            row = indexes[0].row()  # Получаем индекс строки
+            value = model.data(model.index(row, target_column))  # Получаем значение целевого столбца
+            return value
+        else:
+            return None  # Если запись не найдена
     # def get_row_by_key(self, model, key_value, key_column=0):
     #     """
     #     Возвращает данные строки из QSqlTableModel по значению ключа.
@@ -595,6 +706,11 @@ class ExponatDBMS(QMainWindow):
                                                         "Федеральный округ", 'Город', "Статус", "Номер области",
                                                         "Область", "Категория", "Профиль"
                                                         ])
+
+        self.ui.vyst_mo_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.vuz_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
@@ -1011,38 +1127,40 @@ class ExponatDBMS(QMainWindow):
             model.select()  # Перезагружаем данные в исходном порядке
             self.sort_states[table_name][logicalIndex] = None
 
-    def open_delete_confirm_dialog(self, selected_row):
-        self.confirm_dialog = QDialog()  # Теперь должно работать
-        self.ui_confirm_dialog = Ui_Dialog()
-        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
-        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
-        # Устанавливаем текст в QLabel
-        self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
-
-        # Подключаем кнопку "OK" к функции delete_record
-        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(selected_row))
-
-        # Подключаем кнопку "Cancel" для закрытия диалога
-        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
-        self.confirm_dialog.exec_()
-        self.confirm_dialog.setModal(True)
+    # def open_delete_confirm_dialog(self, selected_row):
+    #     self.confirm_dialog = QDialog()  # Теперь должно работать
+    #     self.ui_confirm_dialog = Ui_Dialog()
+    #     self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+    #     self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+    #     # Устанавливаем текст в QLabel
+    #     self.ui_confirm_dialog.label.setText(f"Удалить строку с номером {selected_row + 1}?")
+    #
+    #     # Подключаем кнопку "OK" к функции delete_record
+    #     self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(selected_row))
+    #
+    #     # Подключаем кнопку "Cancel" для закрытия диалога
+    #     self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+    #     self.confirm_dialog.exec_()
+    #     self.confirm_dialog.setModal(True)
 
     def delete_button_action(self):
-        current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
-        if current_widget is not None:  # Проверяем, что текущий виджет существует
-            current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
+        current_widget = self.ui.db_tables.currentWidget() # Получаем текущий виджет
+        if current_widget is not None: # Проверяем, что текущий виджет существует
+            current_table: QTableView = current_widget.children()[1] # Получаем второй дочерний элемент
 
             if isinstance(current_table, QTableView):
-                selected_row = current_table.selectionModel().currentIndex().row()
+                selected_rows = current_table.selectionModel().selectedRows()
 
-                if selected_row >= 0:  # Проверяем, что строка выделена
-                    self.open_delete_confirm_dialog(selected_row)  # Передаем номер строки
+                if selected_rows:
+                    row_numbers = [row.row() + 1 for row in selected_rows]
+                    self.open_confirm_dialog(row_numbers) # Передаем список номеров строк
                 else:
-                    QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
+                    QMessageBox.warning(self, "Ошибка", "Выберите строки в таблице.")
             else:
                 QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
         else:
             QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
+
 
     def delete_record(self, selected_row):
         # Получаем текущий виджет QTableView
