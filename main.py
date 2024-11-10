@@ -445,76 +445,6 @@ class ExponatDBMS(QMainWindow):
 
         self.new_dialog.close()
 
-    # def find_row_by_value(self, table_view: QTableView, column_name: str, value):
-    #     # Получаем модель данных QSqlTableModel из представления QTableView
-    #     model: QSqlTableModel = table_view.model()
-    #
-    #     # Ищем индекс столбца по его имени
-    #     column_index = -1
-    #     for i in range(model.columnCount()):
-    #         if model.headerData(i, Qt.Horizontal) == column_name:
-    #             column_index = i
-    #             break
-    #
-    #     if column_index == -1:
-    #         raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
-    #
-    #     # Проходим по каждой строке и проверяем значение в нужном столбце
-    #     for row in range(model.rowCount()):
-    #         cell_value = model.index(row, column_index).data()
-    #         if cell_value == value:
-    #             return row
-    #
-    #     # Если значение не найдено, возвращаем -1
-    #     return -1
-
-    # def get_value_from_table(self, table_view: QTableView, column_name: str, row: int):
-    #     # Получаем модель данных QSqlTableModel из представления QTableView
-    #     model: QSqlTableModel = table_view.model()
-    #
-    #     # Ищем индекс столбца по его имени
-    #     column_index = -1
-    #     for i in range(model.columnCount()):
-    #         if model.headerData(i, Qt.Horizontal) == column_name:
-    #             column_index = i
-    #             break
-    #
-    #     if column_index == -1:
-    #         raise ValueError(f"Столбец '{column_name}' не найден в таблице.")
-    #
-    #     # Проверяем, что номер строки корректный
-    #     if row < 0 or row >= model.rowCount():
-    #         raise ValueError(f"Неверный номер строки: {row}. Допустимые значения от 0 до {model.rowCount() - 1}.")
-    #
-    #     # Получаем значение ячейки по индексу строки и столбца
-    #     return model.index(row, column_index).data()
-
-    # def get_value_by_key(self, model, key_value, key_column=0, target_column=1):
-    #     """
-    #     Возвращает значение из таблицы по ключу.
-    #
-    #     :param model: QSqlTableModel - модель данных
-    #     :param key_value: значение ключа (например, id)
-    #     :param key_column: индекс столбца ключа (по умолчанию 0)
-    #     :param target_column: индекс столбца, из которого нужно получить значение
-    #     :return: Значение из указанного столбца или None, если запись не найдена
-    #     """
-    #     # Ищем индекс строки, соответствующий ключевому значению
-    #     indexes = model.match(
-    #         model.index(0, key_column),  # Начинаем поиск с первой строки в столбце ключа
-    #         Qt.ItemDataRole.DisplayRole,  # Совпадение по точному значению
-    #         key_value,  # Значение ключа для поиска
-    #         1,  # Ищем только одно совпадение
-    #         Qt.MatchFlag.MatchExactly
-    #     )
-    #     print(indexes)
-    #
-    #     if indexes:  # Если нашлось совпадение
-    #         row = indexes[0].row()  # Получаем индекс строки
-    #         value = model.data(model.index(row, target_column))  # Получаем значение целевого столбца
-    #         return value
-    #     else:
-    #         return None  # Если запись не найдена
     def open_delete_confirm_dialog(self, row_numbers):
         self.confirm_dialog = QDialog() # Теперь должно работать
         self.ui_confirm_dialog = Ui_Dialog()
@@ -1153,26 +1083,13 @@ class ExponatDBMS(QMainWindow):
 
                 if selected_rows:
                     row_numbers = [row.row() + 1 for row in selected_rows]
-                    self.open_confirm_dialog(row_numbers) # Передаем список номеров строк
+                    self.open_delete_confirm_dialog(row_numbers) # Передаем список номеров строк
                 else:
                     QMessageBox.warning(self, "Ошибка", "Выберите строки в таблице.")
             else:
                 QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
         else:
             QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
-
-
-    def delete_record(self, selected_row):
-        # Получаем текущий виджет QTableView
-        current_table = self.ui.db_tables.currentWidget().children()[1]
-
-        if isinstance(current_table, QTableView):
-            model = current_table.model()  # Получаем модель таблицы
-            model.removeRow(selected_row)  # Удаляем строку
-            model.submitAll()  # Применяем изменения
-            model.select()  # Обновляем данные в таблице
-
-        self.confirm_dialog.close()  # Закрываем диалог
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No,
