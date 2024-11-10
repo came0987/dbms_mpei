@@ -5,6 +5,7 @@ from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
                                QMessageBox, QDialog)
+from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel, QRegularExpression, QEvent
 from PySide6.QtCore import Qt, QSortFilterProxyModel, QRegularExpression
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
@@ -15,6 +16,8 @@ from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
 from table_models import VuzBase, ExpositionBase, GrntiBase
+from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
+from PySide6.QtCore import QRegularExpression, QEvent, Qt
 
 
 class ExponatDBMS(QMainWindow):
@@ -32,7 +35,6 @@ class ExponatDBMS(QMainWindow):
 
         self.filter_input_layout = QGridLayout()  # Layout for the filter input field
         self.ui.toplevel_layout.addLayout(self.filter_input_layout)  # Добавляем его в главный макет
-
 
         self.init_tables()
         self.ui.tables_menu.triggered.connect(self.set_current_table)
@@ -66,6 +68,8 @@ class ExponatDBMS(QMainWindow):
         self.ui.delete_btn.clicked.connect(self.delete_button_action)
         self.ui.update_btn.clicked.connect(self.update_vyst_button_action)
 
+#######################################__ДОБАВЛЕНИЕ ЗАПИСИ__###########################################################
+
     def open_create_entry_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_entry_dialog = Ui_add_zapis_dialog()
@@ -81,7 +85,7 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
 
         self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
-        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")  # Разрешаем только буквы и пробелы
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\,\:\;]+$")  # Разрешаем только буквы и пробелы
         validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
         self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
         validator_1 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_doljnost)
@@ -120,7 +124,7 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(self.validate_codvuz_input)
 
         # Регулярное выражение для разрешения только букв в nir_ruk
-        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")
+        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;]+$")
         validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
         self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
 
@@ -160,25 +164,90 @@ class ExponatDBMS(QMainWindow):
             # Если введенное значение не найдено, сбрасываем поле
             self.ui_create_entry_dialog.codvuz.setCurrentIndex(-1)
 
+
+    # def auto_insert_dots(self):
+    #     text = self.ui_create_entry_dialog.grnti.text().replace(".", "")  # Убираем все точки перед обработкой
+    #
+    #     # Ограничиваем ввод только до цифр, удаляя любые другие символы
+    #     if not text.isdigit():
+    #         corrected_text = ''.join(filter(str.isdigit, text))
+    #     else:
+    #         corrected_text = text
+    #
+    #     formatted_text = ""
+    #
+    #     # Добавляем точку после каждой пары цифр, пока текст не станет "xx.xx.xx"
+    #     for i in range(len(corrected_text)):
+    #         if i > 0 and i % 2 == 0:
+    #             formatted_text += "."
+    #         formatted_text += corrected_text[i]
+    #
+    #     # Ограничиваем ввод до 8 символов (формат "xx.xx.xx")
+    #     if len(formatted_text) > 8:
+    #         formatted_text = formatted_text[:8]
+    #
+    #     # Обновляем текст в поле и курсор в конце текста
+    #     self.ui_create_entry_dialog.grnti.blockSignals(True)  # Отключаем сигнал, чтобы избежать рекурсии
+    #     self.ui_create_entry_dialog.grnti.setText(formatted_text)
+    #     self.ui_create_entry_dialog.grnti.blockSignals(False)
+    #     self.ui_create_entry_dialog.grnti.setCursorPosition(len(formatted_text))
+
+    from PySide6.QtGui import QRegularExpressionValidator
+    from PySide6.QtCore import QRegularExpression
+
+    from PySide6.QtGui import QRegularExpressionValidator
+    from PySide6.QtCore import QRegularExpression
+
+    def setup_grnti_input(self):
+        # Подключаем обработчик textChanged для жёсткой фильтрации текста
+        self.ui_create_entry_dialog.grnti.textChanged.connect(self.filter_grnti_input)
+
+    def filter_grnti_input(self):
+        text = self.ui_create_entry_dialog.grnti.text()
+
+        # Разрешаем только цифры, точки, точки с запятой и пробелы
+        allowed_text = ''.join([ch for ch in text if ch.isdigit() or ch in ['.', ';', ' ']])
+
+        # Проверяем, если текст был изменён (это значит, что были удалены недопустимые символы)
+        if text != allowed_text:
+            # Устанавливаем курсор на последнюю позицию, чтобы не сбивать пользователя
+            cursor_position = self.ui_create_entry_dialog.grnti.cursorPosition()
+            self.ui_create_entry_dialog.grnti.setText(allowed_text)
+            self.ui_create_entry_dialog.grnti.setCursorPosition(min(cursor_position, len(allowed_text)))
+
+        # Применяем автоформатирование для структуры "xx.xx.xx"
+        self.auto_insert_dots()
+
     def auto_insert_dots(self):
-        text = self.ui_create_entry_dialog.grnti.text().replace(".", "")  # Убираем все точки перед обработкой
-        formatted_text = ""
+        text = self.ui_create_entry_dialog.grnti.text()
+        segments = text.split(";")  # Разделяем на отдельные коды по ";"
+        formatted_segments = []
 
-        # Добавляем точку после каждой пары цифр, пока текст не станет "xx.xx.xx"
-        for i in range(len(text)):
-            if i > 0 and i % 2 == 0:
-                formatted_text += "."
-            formatted_text += text[i]
+        for segment in segments:
+            # Очищаем сегмент от всех точек и пробелов перед форматированием
+            clean_segment = segment.replace(".", "").replace(" ", "")
+            formatted_text = ""
 
-        # Ограничиваем ввод до 8 символов (формат "xx.xx.xx")
-        if len(formatted_text) > 8:
-            formatted_text = formatted_text[:8]
+            # Форматируем текст как "xx.xx.xx"
+            for i in range(len(clean_segment)):
+                if i > 0 and i % 2 == 0:
+                    formatted_text += "."
+                formatted_text += clean_segment[i]
 
-        # Обновляем текст в поле и курсор в конце текста
-        self.ui_create_entry_dialog.grnti.blockSignals(True)  # Отключаем сигнал, чтобы избежать рекурсии
-        self.ui_create_entry_dialog.grnti.setText(formatted_text)
+            # Ограничиваем длину сегмента до 8 символов
+            if len(formatted_text) > 8:
+                formatted_text = formatted_text[:8]
+
+            formatted_segments.append(formatted_text)
+
+        # Объединяем отформатированные сегменты, разделённые "; "
+        final_text = "; ".join(formatted_segments)
+
+        # Обновляем текст в поле и устанавливаем курсор в конец
+        self.ui_create_entry_dialog.grnti.blockSignals(True)
+        self.ui_create_entry_dialog.grnti.setText(final_text)
         self.ui_create_entry_dialog.grnti.blockSignals(False)
-        self.ui_create_entry_dialog.grnti.setCursorPosition(len(formatted_text))
+        self.ui_create_entry_dialog.grnti.setCursorPosition(len(final_text))
 
     def sync_codvuz_combo(self):
         # Получаем codvuz, связанный с текущим vuzname
@@ -596,6 +665,7 @@ class ExponatDBMS(QMainWindow):
         # Показываем все строки при переключении таблиц
         self.show_all_rows()
 
+    ################################################__ФИЛЬТРЫ__#############################################
     def rebuild_filter_grid(self):
         # Удаляем все элементы из сетки
         for i in reversed(range(self.filter_input_layout.count())):
@@ -649,7 +719,6 @@ class ExponatDBMS(QMainWindow):
         # Добавляем отступы для улучшения внешнего вида
         layout.setContentsMargins(5, 5, 5, 5)
         layout.setSpacing(10)
-
 
         return layout
 
@@ -934,5 +1003,3 @@ if __name__ == '__main__':
     window = ExponatDBMS()
     window.show()
     sys.exit(app.exec())
-
-
