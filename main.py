@@ -1,7 +1,7 @@
 import sys
 
 import PySide6
-from PySide6.QtGui import QRegularExpressionValidator, QIntValidator
+from PySide6.QtGui import QRegularExpressionValidator, QIntValidator, QFontMetrics
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
                                QMessageBox, QDialog)
@@ -15,7 +15,7 @@ from connection import Session, Data
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
-from table_models import VuzBase, ExpositionBase, GrntiBase
+from table_models import VuzBase, VystMoBase, GrntiBase
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression, QEvent, Qt
 
@@ -27,7 +27,7 @@ class ExponatDBMS(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.connection = Data()
-        self.showMaximized()
+        # self.showMaximized()
         self.current_model = None  # Текущая модель для фильтрации
         self.filter_fields = {}  # Словарь для хранения полей фильтрации для каждого столбца
         self.ui.add_filters_cb.currentIndexChanged.connect(self.update_filter_input_field)
@@ -163,40 +163,6 @@ class ExponatDBMS(QMainWindow):
         if self.ui_create_entry_dialog.codvuz.findText(input_text) == -1:
             # Если введенное значение не найдено, сбрасываем поле
             self.ui_create_entry_dialog.codvuz.setCurrentIndex(-1)
-
-
-    # def auto_insert_dots(self):
-    #     text = self.ui_create_entry_dialog.grnti.text().replace(".", "")  # Убираем все точки перед обработкой
-    #
-    #     # Ограничиваем ввод только до цифр, удаляя любые другие символы
-    #     if not text.isdigit():
-    #         corrected_text = ''.join(filter(str.isdigit, text))
-    #     else:
-    #         corrected_text = text
-    #
-    #     formatted_text = ""
-    #
-    #     # Добавляем точку после каждой пары цифр, пока текст не станет "xx.xx.xx"
-    #     for i in range(len(corrected_text)):
-    #         if i > 0 and i % 2 == 0:
-    #             formatted_text += "."
-    #         formatted_text += corrected_text[i]
-    #
-    #     # Ограничиваем ввод до 8 символов (формат "xx.xx.xx")
-    #     if len(formatted_text) > 8:
-    #         formatted_text = formatted_text[:8]
-    #
-    #     # Обновляем текст в поле и курсор в конце текста
-    #     self.ui_create_entry_dialog.grnti.blockSignals(True)  # Отключаем сигнал, чтобы избежать рекурсии
-    #     self.ui_create_entry_dialog.grnti.setText(formatted_text)
-    #     self.ui_create_entry_dialog.grnti.blockSignals(False)
-    #     self.ui_create_entry_dialog.grnti.setCursorPosition(len(formatted_text))
-
-    from PySide6.QtGui import QRegularExpressionValidator
-    from PySide6.QtCore import QRegularExpression
-
-    from PySide6.QtGui import QRegularExpressionValidator
-    from PySide6.QtCore import QRegularExpression
 
     def setup_grnti_input(self):
         # Подключаем обработчик textChanged для жёсткой фильтрации текста
@@ -374,7 +340,7 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
 
         Data.close_connection()
-        current_obj = ExpositionBase.get_by_name_2(row_data[1], row_data[3])
+        current_obj = VystMoBase.get_by_name_2(row_data[1], row_data[3])
         Data.create_connection()
         print(row_data[1], row_data[3])
         print(current_obj)
@@ -485,10 +451,10 @@ class ExponatDBMS(QMainWindow):
 
         Data.close_connection()
 
-        new_vyst = ExpositionBase(codvuz=codvuz, type=priznak, regnumber=reg_number, subject=nir_name,
-                                  grnti=grnti, bossname=nir_ruk, boss_position=ruk_doljnost,
-                                  boss_academic_rank=ruk_zvanie, boss_scientific_degree=ruk_stepen,
-                                  exhitype=exponat_est, vystavki=vistavka, exponat=exponat_name)
+        new_vyst = VystMoBase(codvuz=codvuz, type=priznak, regnumber=reg_number, subject=nir_name,
+                              grnti=grnti, bossname=nir_ruk, boss_position=ruk_doljnost,
+                              boss_academic_rank=ruk_zvanie, boss_scientific_degree=ruk_stepen,
+                              exhitype=exponat_est, vystavki=vistavka, exponat=exponat_name)
 
         with Session() as session:
             try:
@@ -579,7 +545,7 @@ class ExponatDBMS(QMainWindow):
 
         self.set_custom_headers(self.grntirub_table_model, ["Код рубрики", "Наименование рубрики"])
         self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Сокр. наим. ВУЗа",
-                                                        "Наименование НИР", "Коды  ГРНТИ", "Руководитель НИР",
+                                                        "Наименование НИР", "Коды  ГРНТИ", "Рубрики ГРНТИ", "Руководитель НИР",
                                                         "Должность", "Ученое звание", "Ученая степень",
                                                         "Рег. номер НИР", "Выставки", "Выставочный экспонат",
                                                         "Признак  формы НИР", "Признак", "Название ВУЗа",
@@ -588,10 +554,10 @@ class ExponatDBMS(QMainWindow):
                                                         "Область", "Категория", "Профиль"
                                                         ])
 
-        self.ui.vyst_mo_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.ui.vuz_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.vyst_mo_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.ui.vuz_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
@@ -609,12 +575,26 @@ class ExponatDBMS(QMainWindow):
 
         # Устанавливаем режим растягивания заголовков
         for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table]:
-            header = table.horizontalHeader()
-            header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-            # Устанавливаем автоматическое изменение ширины столбцов
-            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+            #плавная прокрутка
+            table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
 
-        self.ui.vyst_mo_table.setColumnHidden(10, True)
+            header = table.horizontalHeader()
+
+            #ширину столбцов подстраивает
+            font_metrics = QFontMetrics(table.font())
+
+            header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+
+            for col in range(header.count()):
+                header_text = table.model().headerData(col, Qt.Orientation.Horizontal)
+                header_width = font_metrics.horizontalAdvance(header_text) + 20
+                table.setColumnWidth(col, header_width)
+
+            header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+            header.setStretchLastSection(False)
+            table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+
+        # self.ui.vyst_mo_table.setColumnHidden(10, True)
         self.ui.vyst_mo_table.setEditTriggers(QAbstractItemView.EditTrigger.AllEditTriggers)
 
         while self.vyst_mo_table_model.canFetchMore():
