@@ -50,7 +50,7 @@ class VuzBase(Base):
     gr_ved: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     prof: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
-    vysts = relationship("ExpositionBase", back_populates="vuz", cascade="all, delete")
+    vysts = relationship("VystMoBase", back_populates="vuz", cascade="all, delete")
 
 class GrntiBase(Base):
     __tablename__ = 'grnti'
@@ -60,7 +60,7 @@ class GrntiBase(Base):
     rubrika: Mapped[str] = mapped_column(String(100), nullable=False)
 
 
-class ExpositionBase(Base):
+class VystMoBase(Base):
     __tablename__ = 'vyst_mo'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -86,6 +86,44 @@ class ExpositionBase(Base):
             db_object = session.scalars(statement).one()
         return db_object
 
-    # @staticmethod
-    # def create_user(user: ExpositionBase, session) -> None:
-    #     session.add(user)
+
+class SvodBase(Base):
+    __tablename__ = 'svod'
+    # id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'), primary_key=True,)
+    codvuz = Column(Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE'))
+    z2 = Column(String)
+    subject = Column(String)
+    grnti = Column(String)
+    rubrika = Column(String)  # Новый столбец для рубрики
+    bossname = Column(String)
+    regnumber = Column(Integer)
+    
+    type = Column(String)
+    boss_position = Column(String)
+    boss_academic_rank = Column(String)
+    boss_scientific_degree = Column(String)
+    exhitype = Column(String)
+    vystavki = Column(String)
+    exponat = Column(String)
+
+    # Поля из таблицы VUZ
+    z1 = Column(String)
+    z1full = Column(String)
+    region = Column(String)
+    city = Column(String)
+    status = Column(String)
+    obl = Column(String)
+    oblname = Column(String)
+    gr_ved = Column(String)
+    prof = Column(String)
+
+    # Устанавливаем связи
+    vyst_mo = relationship("VystMoBase", backref="svod", cascade="all, delete")
+    # vyst_mo = relationship(
+    #     "VystMoBase",
+    #     primaryjoin="SvodBase.codvuz == VystMoBase.codvuz",
+    #     backref="svod",
+    #     cascade="all, delete"
+    # )
+    vuz = relationship("VuzBase", backref="svod", cascade="all, delete")

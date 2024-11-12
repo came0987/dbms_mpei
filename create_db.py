@@ -1,10 +1,7 @@
 import pandas as pd
-import sqlite3
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from connection import Session, engine
-from table_models import Base, GrntiBase, VuzBase, ExpositionBase
+from table_models import Base, GrntiBase, VuzBase, VystMoBase, SvodBase
 
 
 # """
@@ -47,8 +44,56 @@ def fill_tables_from_excel():
         # Заполнение таблиц
         load_excel_to_table('./data/grntirub.xlsx', GrntiBase, session)
         load_excel_to_table('./data/vuz.xlsx', VuzBase, session)
-        load_excel_to_table('./data/vyst_mo.xlsx', ExpositionBase, session)
+        load_excel_to_table('./data/vyst_mo.xlsx', VystMoBase, session)
 
+
+def populate_svod():
+    session = Session()
+    vyst_records = session.query(VystMoBase).all()
+    for vyst in vyst_records:
+        vuz = session.query(VuzBase).filter_by(codvuz=vyst.codvuz).first()
+        if vuz:
+            # Извлекаем первые две цифры из grnti для поиска в таблице grnti_cod
+            grnti_prefix = vyst.grnti[:2] if vyst.grnti else None
+            rubrika = None
+            if grnti_prefix:
+                grnti_record = session.query(GrntiBase).filter_by(codrub=grnti_prefix).first()
+                rubrika = grnti_record.rubrika if grnti_record else None
+
+            # Создаем запись в SVOD
+            new_svod = SvodBase(
+                id=vyst.id,  # Связываем записи по id
+                codvuz=vyst.codvuz,
+                # id=vyst.id,  # Связываем записи по id
+                z2=vuz.z2,
+                subject=vyst.subject,
+                grnti=vyst.grnti,
+                rubrika=rubrika,  # Добавляем рубрику
+                bossname=vyst.bossname,
+                regnumber=vyst.regnumber,
+                z1=vuz.z1,
+                z1full=vuz.z1full,
+                region=vuz.region,
+                city=vuz.city,
+                status=vuz.status,
+                obl=vuz.obl,
+                oblname=vuz.oblname,
+                gr_ved=vuz.gr_ved,
+                prof=vuz.prof,
+                type=vyst.type,
+                boss_position=vyst.boss_position,
+                boss_academic_rank=vyst.boss_academic_rank,
+                boss_scientific_degree=vyst.boss_scientific_degree,
+                exhitype=vyst.exhitype,
+                vystavki=vyst.vystavki,
+                exponat=vyst.exponat
+            )
+            session.add(new_svod)
+    session.commit()
+
+
+# Заполняем таблицу SVOD
+# populate_svod()
 
 # Создаем подключение к базе данных SQLite
 # engine = create_engine('sqlite:///database.db')
@@ -56,4 +101,5 @@ def fill_tables_from_excel():
 
 if __name__ == '__main__':
     create_db_and_tables()
-    fill_tables_from_excel()
+    populate_svod()
+    # fill_tables_from_excel()
