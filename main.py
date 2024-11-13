@@ -58,11 +58,6 @@ class ExponatDBMS(QMainWindow):
 
         self.ui.add_filters_cb.currentIndexChanged.connect(self.update_filter_input_field)
         self.init_tables()
-        # Создаем виджет-контейнер для фильтров
-        # self.filter_container_widget = QWidget()
-        # self.filter_layout = QVBoxLayout(self.filter_container_widget)  # Layout для фильтров
-        # self.ui.scrollArea.setWidget(self.filter_container_widget)  # Устанавливаем контейнер в QScrollArea
-        # self.ui.scrollArea.setWidgetResizable(True)  # Делаем виджет растягиваемым
 
         self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         self.ui.delete_btn.clicked.connect(self.delete_button_action)
@@ -317,9 +312,6 @@ class ExponatDBMS(QMainWindow):
         vuz_list = [vuz.z1 for vuz in vuz_records]
         codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
 
-        # self.ui_create_entry_dialog.vuz.addItems(vuz_list)
-        # self.ui_create_entry_dialog.codvuz.addItems(codvuz_list)
-
         # Настройка комплитеров после заполнения ComboBox
         vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
         codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
@@ -388,11 +380,6 @@ class ExponatDBMS(QMainWindow):
         exponat_name = self.ui_create_entry_dialog.exponat_name.text()
 
         Data.close_connection()
-
-        # new_vyst = ExpositionBase(codvuz=codvuz, type=priznak, regnumber=reg_number, subject=nir_name,
-        #                           grnti=grnti, bossname=nir_ruk, boss_position=ruk_doljnost,
-        #                           boss_academic_rank=ruk_zvanie, boss_scientific_degree=ruk_stepen,
-        #                           exhitype=exponat_est, vystavki=vistavka, exponat=exponat_name)
 
         with Session() as session:
             try:
