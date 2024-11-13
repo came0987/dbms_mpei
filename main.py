@@ -1,23 +1,28 @@
 import sys
 
 import PySide6
-from PySide6.QtGui import QRegularExpressionValidator, QIntValidator, QFontMetrics
+from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
-                               QMessageBox, QDialog)
-from PySide6.QtCore import Qt, QAbstractItemModel, QSortFilterProxyModel, QRegularExpression, QEvent
-from PySide6.QtCore import Qt, QSortFilterProxyModel, QRegularExpression
+                               QMessageBox, QDialog, QLineEdit)
+from PySide6.QtCore import QSortFilterProxyModel
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 
 from connection import Session, Data
+from py_ui.ui_create_vuz import Ui_create_vuz_dialog
 
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
 from table_models import VuzBase, VystMoBase, GrntiBase
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
-from PySide6.QtCore import QRegularExpression, QEvent, Qt
+from PySide6.QtCore import QRegularExpression, Qt
+class Regex:
+    common_regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;\"\']+$")
+    num_regex = QRegularExpression(r"^\d+$")
+    rus_regex = QRegularExpression(r"^[А-Яа-яЁё]+$")
+    upper_rus_regex = QRegularExpression(r"^[А-ЯЁ]+$")
 
 
 class ExponatDBMS(QMainWindow):
@@ -37,8 +42,9 @@ class ExponatDBMS(QMainWindow):
         self.ui.toplevel_layout.addLayout(self.filter_input_layout)  # Добавляем его в главный макет
 
         self.init_tables()
+
         self.ui.tables_menu.triggered.connect(self.set_current_table)
-        self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
+
         # Хранение состояния сортировки для каждой таблицы
         self.sort_states = {
             "vyst_mo_table": {},
@@ -46,8 +52,6 @@ class ExponatDBMS(QMainWindow):
             "grntirub_table": {},
             "svod_table": {}
         }
-        self.ui.tables_menu.triggered.connect(self.set_current_table)
-        self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
 
         self.vyst_mo_proxy_model = QSortFilterProxyModel(self)
         self.vuz_proxy_model = QSortFilterProxyModel(self)
@@ -59,9 +63,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.add_filters_cb.currentIndexChanged.connect(self.update_filter_input_field)
         self.init_tables()
 
-        self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
         self.ui.delete_btn.clicked.connect(self.delete_button_action)
-        self.ui.update_btn.clicked.connect(self.update_vyst_button_action)
 
 #######################################__ДОБАВЛЕНИЕ ЗАПИСИ__###########################################################
 
@@ -80,15 +82,12 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
 
         self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
-        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\,\:\;]+$")  # Разрешаем только буквы и пробелы
-        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
-        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
-        validator_1 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_doljnost)
-        self.ui_create_entry_dialog.ruk_doljnost.setValidator(validator_1)
-        validator_2 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_zvanie)
-        self.ui_create_entry_dialog.ruk_zvanie.setValidator(validator_2)
-        validator_3 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_stepen)
-        self.ui_create_entry_dialog.ruk_stepen.setValidator(validator_3)
+        # Разрешаем только буквы и пробелы
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.nir_ruk)
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_doljnost)
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_zvanie)
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_stepen)
+
 
         Data.close_connection()
         with Session() as session:
@@ -115,13 +114,12 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
 
         # Ограничиваем ввод только существующими значениями
-        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(self.validate_vuz_input)
-        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(self.validate_codvuz_input)
-
-        # Регулярное выражение для разрешения только букв в nir_ruk
-        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;]+$")
-        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
-        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_entry_dialog.vuz: self.validate_cb_input(elem)
+        )
+        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_entry_dialog.codvuz: self.validate_cb_input(elem)
+        )
 
         self.new_dialog.setFixedSize(561, 664)
         self.new_dialog.setModal(True)
@@ -147,17 +145,23 @@ class ExponatDBMS(QMainWindow):
             self.ui_create_entry_dialog.grnti.setText(prefix)
             self.ui_create_entry_dialog.grnti.blockSignals(False)
 
-    def validate_vuz_input(self):
-        input_text = self.ui_create_entry_dialog.vuz.currentText()
-        if self.ui_create_entry_dialog.vuz.findText(input_text) == -1:
-            # Если введенное значение не найдено, сбрасываем поле
-            self.ui_create_entry_dialog.vuz.setCurrentIndex(-1)
+    # def validate_vuz_input(self):
+    #     input_text = self.ui_create_entry_dialog.vuz.currentText()
+    #     if self.ui_create_entry_dialog.vuz.findText(input_text) == -1:
+    #         # Если введенное значение не найдено, сбрасываем поле
+    #         self.ui_create_entry_dialog.vuz.setCurrentIndex(-1)
+    #
+    # def validate_codvuz_input(self):
+    #     input_text = self.ui_create_entry_dialog.codvuz.currentText()
+    #     if self.ui_create_entry_dialog.codvuz.findText(input_text) == -1:
+    #         # Если введенное значение не найдено, сбрасываем поле
+    #         self.ui_create_entry_dialog.codvuz.setCurrentIndex(-1)
 
-    def validate_codvuz_input(self):
-        input_text = self.ui_create_entry_dialog.codvuz.currentText()
-        if self.ui_create_entry_dialog.codvuz.findText(input_text) == -1:
-            # Если введенное значение не найдено, сбрасываем поле
-            self.ui_create_entry_dialog.codvuz.setCurrentIndex(-1)
+    @staticmethod
+    def validate_cb_input(element: QComboBox):
+        input_text = element.currentText()
+        if element.findText(input_text) == -1:
+            element.setCurrentIndex(-1)
 
     def setup_grnti_input(self):
         # Подключаем обработчик textChanged для жёсткой фильтрации текста
@@ -232,7 +236,7 @@ class ExponatDBMS(QMainWindow):
                 self.ui_create_entry_dialog.vuz.setCurrentIndex(index)
                 self.ui_create_entry_dialog.vuz.blockSignals(False)
 
-    def update_vyst_button_action(self):
+    def update_button_action(self, func):
         current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
         if current_widget is not None:  # Проверяем, что текущий виджет существует
             current_table: QTableView = current_widget.children()[1]  # Получаем второй дочерний элемент
@@ -241,7 +245,7 @@ class ExponatDBMS(QMainWindow):
                 selected_row = current_table.selectionModel().currentIndex().row()
 
                 if selected_row >= 0:  # Проверяем, что строка выделена
-                    self.open_update_entry_dialog(model, selected_row)  # Передаем номер строки
+                    func(model, selected_row)  # Передаем номер строки
                 else:
                     QMessageBox.warning(self, "Ошибка", "Выберите строку в таблице.")
             else:
@@ -264,15 +268,11 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
 
         self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
-        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")  # Разрешаем только буквы и пробелы
-        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
-        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
-        validator_1 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_doljnost)
-        self.ui_create_entry_dialog.ruk_doljnost.setValidator(validator_1)
-        validator_2 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_zvanie)
-        self.ui_create_entry_dialog.ruk_zvanie.setValidator(validator_2)
-        validator_3 = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.ruk_stepen)
-        self.ui_create_entry_dialog.ruk_stepen.setValidator(validator_3)
+
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.nir_ruk)
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_doljnost)
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_zvanie)
+        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_stepen)
 
         Data.close_connection()
         with Session() as session:
@@ -323,13 +323,12 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
 
         # Ограничиваем ввод только существующими значениями
-        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(self.validate_vuz_input)
-        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(self.validate_codvuz_input)
-
-        # Регулярное выражение для разрешения только букв в nir_ruk
-        regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s]+$")
-        validator = QRegularExpressionValidator(regex, self.ui_create_entry_dialog.nir_ruk)
-        self.ui_create_entry_dialog.nir_ruk.setValidator(validator)
+        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_entry_dialog.vuz: self.validate_cb_input(elem)
+        )
+        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_entry_dialog.codvuz: self.validate_cb_input(elem)
+        )
 
         Data.close_connection()
         current_obj = VystMoBase.get_by_name_2(row_data[1], row_data[3])
@@ -604,6 +603,11 @@ class ExponatDBMS(QMainWindow):
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
             self.ui.delete_btn.setEnabled(True)
+            self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
+            # func = self.open_create_entry_dialog
+            self.ui.update_btn.clicked.connect(
+                lambda: self.update_button_action(func=self.open_update_entry_dialog)
+            )
             # print(self.get_column_values(self.ui.vyst_mo_table, "Признак  формы НИР"))
         elif text == "ВУЗы":
             self.ui.db_tables.setCurrentIndex(2)
@@ -611,6 +615,10 @@ class ExponatDBMS(QMainWindow):
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
             self.ui.delete_btn.setEnabled(True)
+            self.ui.create_btn.clicked.connect(self.open_create_vuz_dialog)
+            # self.ui.update_btn.clicked.connect(
+            #     lambda: self.update_button_action(func=self.open_update_entry_dialog)
+            # )
             # print(self.get_column_values(self.ui.vuz_table, "Полное наименование"))
         elif text == "Сводная таблица":
             self.ui.db_tables.setCurrentIndex(0)
@@ -628,6 +636,285 @@ class ExponatDBMS(QMainWindow):
 
         # Показываем все строки при переключении таблиц
         self.show_all_rows()
+
+    def open_create_vuz_dialog(self):
+
+        subj_list = ["",
+"Республика Адыгея",
+"Республика Башкортостан",
+"Республика Бурятия",
+"Республика Алтай",
+"Республика Дагестан",
+"Республика Ингушетия",
+"Кабардино-Балкарская Республика",
+"Республика Калмыкия",
+"Карачаево-Черкесская Республика",
+"Республика Карелия",
+"Республика Коми",
+"Республика Марий Эл",
+"Республика Мордовия",
+"Республика Саха (Якутия)",
+"Республика Северная Осетия - Алания",
+"Республика Татарстан (Татарстан)",
+"Республика Тыва",
+"Удмуртская Республика",
+"Республика Хакасия",
+"Чеченская Республика",
+"Чувашская Республика - Чувашия",
+"Алтайский край",
+"Краснодарский край",
+"Красноярский край",
+"Приморский край",
+"Ставропольский край",
+"Хабаровский край",
+"Амурская область",
+"Архангельская область",
+"Астраханская область",
+"Белгородская область",
+"Брянская область",
+"Владимирская область",
+"Волгоградская область",
+"Вологодская область",
+"Воронежская область",
+"Ивановская область",
+"Иркутская область",
+"Калининградская область",
+"Калужская область",
+"Камчатский край",
+"Кемеровская область",
+"Кировская область",
+"Костромская область",
+"Курганская область",
+"Курская область",
+"Ленинградская область",
+"Липецкая область",
+"Магаданская область",
+"Московская область",
+"Мурманская область",
+"Нижегородская область",
+"Новгородская область",
+"Новосибирская область",
+"Омская область",
+"Оренбургская область",
+"Орловская область",
+"Пензенская область",
+"Пермский край",
+"Псковская область",
+"Ростовская область",
+"Рязанская область",
+"Самарская область",
+"Саратовская область",
+"Сахалинская область",
+"Свердловская область",
+"Смоленская область",
+"Тамбовская область",
+"Тверская область",
+"Томская область",
+"Тульская область",
+"Тюменская область",
+"Ульяновская область",
+"Челябинская область",
+"Забайкальский край",
+"Ярославская область",
+"г. Москва",
+"г. Санкт-Петербург",
+"Еврейская автономная область",
+"Ненецкий автономный округ",
+"Ханты-Мансийский АО - Югра",
+"Чукотский автономный округ",
+"Ямало-Ненецкий автономный округ",
+"Республика Крым",
+"г. Севастополь",
+"Запорожская область",
+"Донецкая Народная Республика",
+"Луганская Народная Республика",
+"Херсонская область"]
+        codes_list = ["",
+            "01",
+"02",
+"03",
+"04",
+"05",
+"06",
+"07",
+"08",
+"09",
+"10",
+"11",
+"12",
+"13",
+"14",
+"15",
+"16",
+"17",
+"18",
+"19",
+"20",
+"21",
+"22",
+"23",
+"24",
+"25",
+"26",
+"27",
+"28",
+"29",
+"30",
+"31",
+"32",
+"33",
+"34",
+"35",
+"36",
+"37",
+"38",
+"39",
+"40",
+"41",
+"42",
+"43",
+"44",
+"45",
+"46",
+"47",
+"48",
+"49",
+"50",
+"51",
+"52",
+"53",
+"54",
+"55",
+"56",
+"57",
+"58",
+"59",
+"60",
+"61",
+"62",
+"63",
+"64",
+"65",
+"66",
+"67",
+"68",
+"69",
+"70",
+"71",
+"72",
+"73",
+"74",
+"75",
+"76",
+"77",
+"78",
+"79",
+"83",
+"86",
+"87",
+"89",
+"91",
+"92",
+"90",
+"93",
+"94",
+"95"]
+        federal_regions = ["", "Центральный", "Северо-Западный", "Южный", "Приволжский", "Уральский", "Сибирский", "Дальневосточный", "Северо-Кавказский"]
+
+        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.ui_create_vuz_dialog = Ui_create_vuz_dialog()
+        self.ui_create_vuz_dialog.setupUi(self.new_dialog)
+        self.ui_create_vuz_dialog.save_btn.clicked.connect(self.create_vyst_entry)
+
+        self.ui_create_vuz_dialog.federal_subject_cb.addItems(subj_list)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.addItems(codes_list)
+        self.ui_create_vuz_dialog.federal_region_cb.addItems(federal_regions)
+
+        self.ui_create_vuz_dialog.federal_subject_cb.currentIndexChanged.connect(self.sync_federal_code_combo)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.currentIndexChanged.connect(self.sync_federal_name_combo)
+
+        self.ui_create_vuz_dialog.federal_subject_cb.setEditable(True)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.setEditable(True)
+        self.ui_create_vuz_dialog.federal_region_cb.setEditable(True)
+        # self.ui_create_vuz_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+
+        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_short_name)
+        self.set_validation(Regex.num_regex, self.ui_create_vuz_dialog.vuz_code)
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_name)
+        # self.set_validation(Regex.common_regex, self.ui_create_vuz_dialog.vuz_full_name)
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.city)
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_status)
+        self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_category)
+        self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_profile)
+
+        # Data.close_connection()
+        # with Session() as session:
+        # # Извлекаем все записи из таблицы Vuz
+        #     vuz_records = session.query(VuzBase).all()
+        # Data.create_connection()
+        # # Заполняем оба ComboBox
+        # for vuz in vuz_records:
+        #     self.ui_create_vuz_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
+        #     self.ui_create_vuz_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
+
+        # Заполняем ComboBox значениями
+        # vuz_list = [vuz.z1 for vuz in vuz_records]
+        # codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
+
+        # Настройка комплитеров после заполнения ComboBox
+        subject_name_completer = QCompleter(subj_list, self.ui_create_vuz_dialog.federal_subject_cb)
+        subject_code_completer = QCompleter(codes_list, self.ui_create_vuz_dialog.federal_subject_code_cb)
+        federal_regions_completer = QCompleter(federal_regions, self.ui_create_vuz_dialog.federal_region_cb)
+
+        subject_name_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        subject_code_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        federal_regions_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+
+        self.ui_create_vuz_dialog.federal_subject_cb.setCompleter(subject_name_completer)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.setCompleter(subject_code_completer)
+        self.ui_create_vuz_dialog.federal_region_cb.setCompleter(federal_regions_completer)
+
+        # Ограничиваем ввод только существующими значениями
+        self.ui_create_vuz_dialog.federal_subject_cb.lineEdit().editingFinished.connect(
+            lambda elem = self.ui_create_vuz_dialog.federal_subject_cb: self.validate_cb_input(elem)
+        )
+        self.ui_create_vuz_dialog.federal_subject_code_cb.lineEdit().editingFinished.connect(
+            lambda elem = self.ui_create_vuz_dialog.federal_subject_code_cb: self.validate_cb_input(elem)
+        )
+        self.ui_create_vuz_dialog.federal_region_cb.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vuz_dialog.federal_region_cb: self.validate_cb_input(elem)
+        )
+
+        # Регулярное выражение для разрешения только букв в nir_ruk
+        # regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;]+$")
+        # validator = QRegularExpressionValidator(regex, self.ui_create_vuz_dialog.nir_ruk)
+        # self.ui_create_vuz_dialog.nir_ruk.setValidator(validator)
+
+        self.new_dialog.setFixedSize(468, 573)
+        self.new_dialog.setModal(True)
+        self.new_dialog.show()
+
+    def sync_federal_code_combo(self, index):
+        # При изменении subj_name выбираем соответствующий элемент в subj_code
+        combobox = self.ui_create_vuz_dialog.federal_subject_code_cb
+        combobox.blockSignals(True)  # Блокируем сигнал, чтобы не вызывать обратное обновление
+        combobox.setCurrentIndex(index)
+        combobox.blockSignals(False)
+
+    def sync_federal_name_combo(self, index):
+        # При изменении subj_code выбираем соответствующий элемент в subj_name
+        combobox = self.ui_create_vuz_dialog.federal_subject_cb
+        combobox.blockSignals(True)  # Блокируем сигнал, чтобы не вызывать обратное обновление
+        combobox.setCurrentIndex(index)
+        combobox.blockSignals(False)
+
+    @staticmethod
+    def set_validation(regex, element: QLineEdit):
+        validator = QRegularExpressionValidator(regex, element)
+        element.setValidator(validator)
 
     ################################################__ФИЛЬТРЫ__#############################################
     def rebuild_filter_grid(self):

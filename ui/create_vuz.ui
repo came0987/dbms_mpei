@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>create_vuz_dialog</class>
+ <widget class="QDialog" name="create_vuz_dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="dialog_label">
    <property name="geometry">
     <rect>
      <x>120</x>
@@ -31,7 +31,7 @@
     <string>Добавление нового ВУЗа</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="save_btn">
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -72,7 +72,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit">
+     <widget class="QLineEdit" name="vuz_name">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -105,7 +105,7 @@
      </widget>
     </item>
     <item>
-     <widget class="QTextEdit" name="textEdit">
+     <widget class="QTextEdit" name="vuz_full_name">
       <property name="font">
        <font>
         <pointsize>10</pointsize>
@@ -151,7 +151,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_3">
+     <widget class="QLineEdit" name="vuz_short_name">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -187,7 +187,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_4">
+     <widget class="QLineEdit" name="vuz_code">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -223,7 +223,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QComboBox" name="comboBox">
+     <widget class="QComboBox" name="federal_region_cb">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -256,7 +256,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_5">
+     <widget class="QLineEdit" name="city">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -295,7 +295,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_6">
+     <widget class="QLineEdit" name="vuz_status">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -331,7 +331,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QComboBox" name="comboBox_2">
+     <widget class="QComboBox" name="federal_subject_cb">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -364,7 +364,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_8">
+     <widget class="QLineEdit" name="vuz_category">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -403,7 +403,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit_9">
+     <widget class="QLineEdit" name="vuz_profile">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
@@ -442,7 +442,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      </widget>
     </item>
     <item>
-     <widget class="QComboBox" name="comboBox_3">
+     <widget class="QComboBox" name="federal_subject_code_cb">
       <property name="font">
        <font>
         <pointsize>11</pointsize>
