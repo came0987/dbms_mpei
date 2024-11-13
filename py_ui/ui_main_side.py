@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.3
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -17,16 +17,17 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QGridLayout, QHBoxLayout,
-    QHeaderView, QLayout, QMainWindow, QMenu,
-    QMenuBar, QPushButton, QSizePolicy, QStackedWidget,
-    QTabWidget, QTableView, QVBoxLayout, QWidget)
+    QHeaderView, QLabel, QLayout, QMainWindow,
+    QMenu, QMenuBar, QPushButton, QSizePolicy,
+    QStackedWidget, QTabWidget, QTableView, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.setEnabled(True)
-        MainWindow.resize(1124, 700)
+        MainWindow.resize(1200, 751)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -43,6 +44,8 @@ class Ui_MainWindow(object):
         self.vuz_action.setObjectName(u"vuz_action")
         self.svod_action = QAction(MainWindow)
         self.svod_action.setObjectName(u"svod_action")
+        self.action = QAction(MainWindow)
+        self.action.setObjectName(u"action")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout_2 = QGridLayout(self.centralwidget)
@@ -53,7 +56,7 @@ class Ui_MainWindow(object):
         self.menu_tables_page.setObjectName(u"menu_tables_page")
         self.layoutWidget = QWidget(self.menu_tables_page)
         self.layoutWidget.setObjectName(u"layoutWidget")
-        self.layoutWidget.setGeometry(QRect(190, 620, 801, 41))
+        self.layoutWidget.setGeometry(QRect(180, 670, 801, 41))
         self.crud_menu = QHBoxLayout(self.layoutWidget)
         self.crud_menu.setObjectName(u"crud_menu")
         self.crud_menu.setContentsMargins(0, 0, 0, 0)
@@ -80,15 +83,15 @@ class Ui_MainWindow(object):
 
         self.db_tables = QStackedWidget(self.menu_tables_page)
         self.db_tables.setObjectName(u"db_tables")
-        self.db_tables.setGeometry(QRect(0, 100, 1111, 531))
+        self.db_tables.setGeometry(QRect(0, 100, 1181, 581))
         self.svod = QWidget()
         self.svod.setObjectName(u"svod")
-        self.gridLayout_4 = QGridLayout(self.svod)
-        self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.gridLayout = QGridLayout(self.svod)
+        self.gridLayout.setObjectName(u"gridLayout")
         self.svod_table = QTableView(self.svod)
         self.svod_table.setObjectName(u"svod_table")
 
-        self.gridLayout_4.addWidget(self.svod_table, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.svod_table, 0, 0, 1, 1)
 
         self.db_tables.addWidget(self.svod)
         self.vyst_mo = QWidget()
@@ -128,7 +131,7 @@ class Ui_MainWindow(object):
         self.db_tables.addWidget(self.grntirub)
         self.layoutWidget1 = QWidget(self.menu_tables_page)
         self.layoutWidget1.setObjectName(u"layoutWidget1")
-        self.layoutWidget1.setGeometry(QRect(11, -4, 1081, 111))
+        self.layoutWidget1.setGeometry(QRect(11, 36, 1081, 63))
         self.toplevel_layout = QHBoxLayout(self.layoutWidget1)
         self.toplevel_layout.setObjectName(u"toplevel_layout")
         self.toplevel_layout.setContentsMargins(0, 0, 0, 0)
@@ -140,12 +143,12 @@ class Ui_MainWindow(object):
         self.add_filters_cb.setMinimumSize(QSize(180, 0))
         self.add_filters_cb.setMaximumSize(QSize(180, 16777215))
         font = QFont()
-        font.setPointSize(12)
+        font.setPointSize(11)
         self.add_filters_cb.setFont(font)
         self.add_filters_cb.setEditable(False)
         self.add_filters_cb.setMinimumContentsLength(2)
 
-        self.verticalLayout.addWidget(self.add_filters_cb, 0, Qt.AlignmentFlag.AlignLeft)
+        self.verticalLayout.addWidget(self.add_filters_cb, 0, Qt.AlignmentFlag.AlignVCenter)
 
         self.delete_all_filters = QPushButton(self.layoutWidget1)
         self.delete_all_filters.setObjectName(u"delete_all_filters")
@@ -159,58 +162,86 @@ class Ui_MainWindow(object):
 
         self.toplevel_layout.addLayout(self.verticalLayout)
 
+        self.current_table_label = QLabel(self.menu_tables_page)
+        self.current_table_label.setObjectName(u"current_table_label")
+        self.current_table_label.setGeometry(QRect(10, 0, 331, 21))
+        font1 = QFont()
+        font1.setPointSize(14)
+        self.current_table_label.setFont(font1)
         self.pages_.addWidget(self.menu_tables_page)
         self.menu_groups_page = QWidget()
         self.menu_groups_page.setObjectName(u"menu_groups_page")
-        self.gridLayout = QGridLayout(self.menu_groups_page)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.pushButton_2 = QPushButton(self.menu_groups_page)
-        self.pushButton_2.setObjectName(u"pushButton_2")
-        self.pushButton_2.setFont(font)
-
-        self.gridLayout.addWidget(self.pushButton_2, 0, 1, 1, 1)
-
-        self.groups_pages = QStackedWidget(self.menu_groups_page)
-        self.groups_pages.setObjectName(u"groups_pages")
-        self.group_1 = QWidget()
-        self.group_1.setObjectName(u"group_1")
-        self.gridLayout_7 = QGridLayout(self.group_1)
-        self.gridLayout_7.setObjectName(u"gridLayout_7")
-        self.tableView = QTableView(self.group_1)
-        self.tableView.setObjectName(u"tableView")
-
-        self.gridLayout_7.addWidget(self.tableView, 0, 0, 1, 1)
-
-        self.groups_pages.addWidget(self.group_1)
-        self.group_2 = QWidget()
-        self.group_2.setObjectName(u"group_2")
-        self.groups_pages.addWidget(self.group_2)
-
-        self.gridLayout.addWidget(self.groups_pages, 1, 0, 1, 2)
-
-        self.horizontalLayout = QHBoxLayout()
+        self.stackedWidget = QStackedWidget(self.menu_groups_page)
+        self.stackedWidget.setObjectName(u"stackedWidget")
+        self.stackedWidget.setGeometry(QRect(0, 0, 1181, 701))
+        self.group_list_page = QWidget()
+        self.group_list_page.setObjectName(u"group_list_page")
+        self.layoutWidget2 = QWidget(self.group_list_page)
+        self.layoutWidget2.setObjectName(u"layoutWidget2")
+        self.layoutWidget2.setGeometry(QRect(10, 30, 301, 51))
+        self.horizontalLayout = QHBoxLayout(self.layoutWidget2)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.comboBox_2 = QComboBox(self.menu_groups_page)
-        self.comboBox_2.setObjectName(u"comboBox_2")
-        self.comboBox_2.setFont(font)
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.create_group_btn = QPushButton(self.layoutWidget2)
+        self.create_group_btn.setObjectName(u"create_group_btn")
+        font2 = QFont()
+        font2.setPointSize(12)
+        self.create_group_btn.setFont(font2)
 
-        self.horizontalLayout.addWidget(self.comboBox_2)
+        self.horizontalLayout.addWidget(self.create_group_btn)
 
-        self.pushButton = QPushButton(self.menu_groups_page)
-        self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setFont(font)
+        self.delete_group_btn = QPushButton(self.layoutWidget2)
+        self.delete_group_btn.setObjectName(u"delete_group_btn")
+        self.delete_group_btn.setFont(font2)
 
-        self.horizontalLayout.addWidget(self.pushButton)
+        self.horizontalLayout.addWidget(self.delete_group_btn)
 
-        self.pushButton_3 = QPushButton(self.menu_groups_page)
-        self.pushButton_3.setObjectName(u"pushButton_3")
-        self.pushButton_3.setFont(font)
+        self.group_list_table = QTableView(self.group_list_page)
+        self.group_list_table.setObjectName(u"group_list_table")
+        self.group_list_table.setGeometry(QRect(10, 91, 1161, 611))
+        self.label_2 = QLabel(self.group_list_page)
+        self.label_2.setObjectName(u"label_2")
+        self.label_2.setGeometry(QRect(10, 0, 141, 21))
+        self.label_2.setFont(font1)
+        self.stackedWidget.addWidget(self.group_list_page)
+        self.group_view_page = QWidget()
+        self.group_view_page.setObjectName(u"group_view_page")
+        self.group_view_table = QTableView(self.group_view_page)
+        self.group_view_table.setObjectName(u"group_view_table")
+        self.group_view_table.setGeometry(QRect(10, 91, 1161, 611))
+        self.export_btn = QPushButton(self.group_view_page)
+        self.export_btn.setObjectName(u"export_btn")
+        self.export_btn.setGeometry(QRect(1070, 40, 91, 30))
+        self.export_btn.setFont(font2)
+        self.layoutWidget3 = QWidget(self.group_view_page)
+        self.layoutWidget3.setObjectName(u"layoutWidget3")
+        self.layoutWidget3.setGeometry(QRect(10, 30, 431, 51))
+        self.horizontalLayout_2 = QHBoxLayout(self.layoutWidget3)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.add_record_btn = QPushButton(self.layoutWidget3)
+        self.add_record_btn.setObjectName(u"add_record_btn")
+        self.add_record_btn.setFont(font2)
 
-        self.horizontalLayout.addWidget(self.pushButton_3)
+        self.horizontalLayout_2.addWidget(self.add_record_btn)
 
+        self.delete_record_btn_2 = QPushButton(self.layoutWidget3)
+        self.delete_record_btn_2.setObjectName(u"delete_record_btn_2")
+        self.delete_record_btn_2.setFont(font2)
 
-        self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
+        self.horizontalLayout_2.addWidget(self.delete_record_btn_2)
 
+        self.delete_group_btn_2 = QPushButton(self.layoutWidget3)
+        self.delete_group_btn_2.setObjectName(u"delete_group_btn_2")
+        self.delete_group_btn_2.setFont(font2)
+
+        self.horizontalLayout_2.addWidget(self.delete_group_btn_2)
+
+        self.label = QLabel(self.group_view_page)
+        self.label.setObjectName(u"label")
+        self.label.setGeometry(QRect(10, 0, 201, 31))
+        self.label.setFont(font1)
+        self.stackedWidget.addWidget(self.group_view_page)
         self.pages_.addWidget(self.menu_groups_page)
 
         self.gridLayout_2.addWidget(self.pages_, 0, 0, 1, 1)
@@ -218,12 +249,12 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
-        self.menuBar.setGeometry(QRect(0, 0, 1124, 22))
+        self.menuBar.setGeometry(QRect(0, 0, 1200, 22))
         self.tables_menu = QMenu(self.menuBar)
         self.tables_menu.setObjectName(u"tables_menu")
         self.groups = QMenu(self.menuBar)
         self.groups.setObjectName(u"groups")
-        self.groups.setGeometry(QRect(345, 125, 182, 50))
+        self.groups.setGeometry(QRect(195, 125, 182, 72))
         self.help = QMenu(self.menuBar)
         self.help.setObjectName(u"help")
         MainWindow.setMenuBar(self.menuBar)
@@ -235,11 +266,13 @@ class Ui_MainWindow(object):
         self.tables_menu.addAction(self.vistavki_action)
         self.tables_menu.addAction(self.grnti_action)
         self.tables_menu.addAction(self.vuz_action)
+        self.groups.addAction(self.action)
 
         self.retranslateUi(MainWindow)
 
         self.pages_.setCurrentIndex(0)
         self.db_tables.setCurrentIndex(0)
+        self.stackedWidget.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -251,6 +284,7 @@ class Ui_MainWindow(object):
         self.grnti_action.setText(QCoreApplication.translate("MainWindow", u"\u0413\u0420\u041d\u0422\u0418", None))
         self.vuz_action.setText(QCoreApplication.translate("MainWindow", u"\u0412\u0423\u0417\u044b", None))
         self.svod_action.setText(QCoreApplication.translate("MainWindow", u"\u0421\u0432\u043e\u0434\u043d\u0430\u044f \u0442\u0430\u0431\u043b\u0438\u0446\u0430", None))
+        self.action.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043f\u0438\u0441\u043e\u043a \u0433\u0440\u0443\u043f\u043f", None))
         self.create_btn.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.update_btn.setText(QCoreApplication.translate("MainWindow", u"\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.comboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"+ \u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0433\u0440\u0443\u043f\u043f\u0443", None))
@@ -259,10 +293,15 @@ class Ui_MainWindow(object):
         self.delete_btn.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.add_filters_cb.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0444\u0438\u043b\u044c\u0442\u0440", None))
         self.delete_all_filters.setText(QCoreApplication.translate("MainWindow", u"\u0421\u0431\u0440\u043e\u0441\u0438\u0442\u044c \u0432\u0441\u0435 \u0444\u0438\u043b\u044c\u0442\u0440\u044b", None))
-        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"\u042d\u043a\u0441\u043f\u043e\u0440\u0442", None))
-        self.comboBox_2.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
-        self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
+        self.current_table_label.setText(QCoreApplication.translate("MainWindow", u"\u0422\u0430\u0431\u043b\u0438\u0446\u0430 <\u0438\u043c\u044f \u0442\u0430\u0431\u043b\u0438\u0446\u044b>", None))
+        self.create_group_btn.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
+        self.delete_group_btn.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
+        self.label_2.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043f\u0438\u0441\u043e\u043a \u0433\u0440\u0443\u043f\u043f", None))
+        self.export_btn.setText(QCoreApplication.translate("MainWindow", u"\u041f\u0435\u0447\u0430\u0442\u044c", None))
+        self.add_record_btn.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
+        self.delete_record_btn_2.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
+        self.delete_group_btn_2.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"\u0413\u0440\u0443\u043f\u043f\u0430 <\u0438\u043c\u044f \u0433\u0440\u0443\u043f\u043f\u044b>", None))
         self.tables_menu.setTitle(QCoreApplication.translate("MainWindow", u"\u0422\u0430\u0431\u043b\u0438\u0446\u044b", None))
         self.groups.setTitle(QCoreApplication.translate("MainWindow", u"\u0413\u0440\u0443\u043f\u043f\u044b", None))
         self.help.setTitle(QCoreApplication.translate("MainWindow", u"\u041f\u043e\u043c\u043e\u0449\u044c", None))

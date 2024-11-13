@@ -384,11 +384,8 @@ class ExponatDBMS(QMainWindow):
         with Session() as session:
             try:
                 current_obj.codvuz = codvuz
-                # print(codvuz)
                 current_obj.type = priznak
-                # print(priznak)
                 current_obj.regnumber = reg_number
-                # print(reg_number)
                 current_obj.subject = nir_name
                 current_obj.grnti = grnti
                 current_obj.bossname = nir_ruk
