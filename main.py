@@ -166,7 +166,66 @@ class ExponatDBMS(QMainWindow):
             self.apply_filters()
             self.new_dialog.close()
 #######################################__ДОБАВЛЕНИЕ ЗАПИСИ__###########################################################
+    def validate_entry_fields(self):
+        # Retrieve the input values
+        vuz = self.ui_create_vyst_dialog.vuz.currentText()
+        grnti = self.ui_create_vyst_dialog.grnti.text()
+        nir_ruk = self.ui_create_vyst_dialog.nir_ruk.text()
+        nir_name = self.ui_create_vyst_dialog.nir_name.text()
+        reg_number = self.ui_create_vyst_dialog.reg_number.text()
 
+        Data.close_connection()
+        with Session() as session:
+        # Извлекаем все записи из таблицы Vuz
+            vuz_records = session.query(VuzBase.z1).all()
+        Data.create_connection()
+        vuz_names_list = [row[0] for row in vuz_records]
+
+        # Initialize a flag to track if any errors are found
+        error_found = False
+
+        # Validate codvuz by checking if it exists in the list of valid names
+        valid_vuz_names = vuz_names_list
+        if vuz not in valid_vuz_names:
+            self.ui_create_vyst_dialog.vuz_error.setText("Несуществующее название")
+            self.ui_create_vyst_dialog.vuz_error.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vyst_dialog.vuz_error.setText("")
+
+        # Validate grnti to ensure it contains only digits
+        if not grnti.isdigit():
+            self.ui_create_vyst_dialog.grnti_error.setText("Неверный код")
+            self.ui_create_vyst_dialog.grnti_error.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vyst_dialog.grnti_error.setText("")
+
+        if not reg_number:
+            self.ui_create_vyst_dialog.reg_number_error.setText("Заполните поле!")
+            self.ui_create_vyst_dialog.reg_number_error.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vyst_dialog.reg_number_error.setText("")
+
+        # Check if other required fields are filled
+        if not nir_ruk:
+            self.ui_create_vyst_dialog.bossname_error.setText("Заполните поле!")
+            self.ui_create_vyst_dialog.bossname_error.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vyst_dialog.bossname_error.setText("")
+
+        if not nir_name:
+            self.ui_create_vyst_dialog.nir_error.setText("Заполните поле!")
+            self.ui_create_vyst_dialog.nir_error.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vyst_dialog.nir_error.setText("")
+
+        # Return True if any errors are found, otherwise False
+        return error_found
+    
     def open_create_vyst_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_vyst_dialog = Ui_add_zapis_dialog()
@@ -247,22 +306,22 @@ class ExponatDBMS(QMainWindow):
             self.ui_create_vyst_dialog.grnti.blockSignals(False)
 
     # def validate_vuz_input(self):
-    #     input_text = self.ui_create_entry_dialog.vuz.currentText()
-    #     if self.ui_create_entry_dialog.vuz.findText(input_text) == -1:
+    #     input_text = self.ui_create_vyst_dialog.vuz.currentText()
+    #     if self.ui_create_vyst_dialog.vuz.findText(input_text) == -1:
     #         # Если введенное значение не найдено, сбрасываем поле
-    #         self.ui_create_entry_dialog.vuz.setCurrentIndex(-1)
+    #         self.ui_create_vyst_dialog.vuz.setCurrentIndex(-1)
     #
     # def validate_codvuz_input(self):
-    #     input_text = self.ui_create_entry_dialog.codvuz.currentText()
-    #     if self.ui_create_entry_dialog.codvuz.findText(input_text) == -1:
+    #     input_text = self.ui_create_vyst_dialog.codvuz.currentText()
+    #     if self.ui_create_vyst_dialog.codvuz.findText(input_text) == -1:
     #         # Если введенное значение не найдено, сбрасываем поле
-    #         self.ui_create_entry_dialog.codvuz.setCurrentIndex(-1)
+    #         self.ui_create_vyst_dialog.codvuz.setCurrentIndex(-1)
 
     @staticmethod
     def validate_cb_input(element: QComboBox):
         input_text = element.currentText()
-        if element.findText(input_text) == -1:
-            element.setCurrentIndex(-1)
+        # if element.findText(input_text) == -1:
+        #     element.setCurrentIndex(-1)
 
     def setup_grnti_input(self):
         # Подключаем обработчик textChanged для жёсткой фильтрации текста
@@ -484,6 +543,9 @@ class ExponatDBMS(QMainWindow):
             return []
 
     def update_vyst_entry(self):
+        if self.validate_entry_fields():
+            return
+
         current_obj = self.current_obj
         exp_est = {
             "Есть": "Е",
@@ -540,6 +602,9 @@ class ExponatDBMS(QMainWindow):
         self.new_dialog.close()
 
     def create_vyst_entry(self):
+        if self.validate_entry_fields():
+            return
+
         exp_est = {
             "Есть": "Е",
             "Планируется": "П",
