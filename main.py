@@ -225,7 +225,7 @@ class ExponatDBMS(QMainWindow):
 
         # Return True if any errors are found, otherwise False
         return error_found
-    
+
     def open_create_vyst_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_vyst_dialog = Ui_add_zapis_dialog()
@@ -652,33 +652,30 @@ class ExponatDBMS(QMainWindow):
         self.apply_filters()
         self.new_dialog.close()
 
-    def open_delete_confirm_dialog(self, row_numbers):
-        self.confirm_dialog = QDialog() # Теперь должно работать
+    def open_delete_confirm_dialog(self, message):
+        self.confirm_dialog = QDialog()
         self.ui_confirm_dialog = Ui_Dialog()
         self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+        self.ui_confirm_dialog.label.setText(message)
 
-        # Формируем текст с номерами строк
-        row_numbers_str = ", ".join(str(number) for number in row_numbers)
-        self.ui_confirm_dialog.label.setText(f"Удалить строки с номером {row_numbers_str}?")
+    # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(self.delete_record)
 
-        # Подключаем кнопку "OK" к функции delete_record
-        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_record(row_numbers))
-
-        # Подключаем кнопку "Cancel" для закрытия диалога
+    # Подключаем кнопку "Cancel" для закрытия диалога
         self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
         self.confirm_dialog.exec_()
         self.confirm_dialog.setModal(True)
 
-    def delete_record(self, row_numbers):
-        # Получаем текущий виджет QTableView
+    def delete_record(self):
+    # Получаем текущий виджет QTableView
         current_table = self.ui.db_tables.currentWidget().children()[1]
 
         if isinstance(current_table, QTableView):
             model = current_table.model() # Получаем модель таблицы
-        # Удаляем строки в обратном порядке, чтобы индексы не смещались
-            for row_number in sorted(row_numbers, reverse=True):
-                model.removeRow(row_number - 1) # Удаляем строку
-            self.top_scroll_func()
+      # Удаляем строки в обратном порядке, чтобы индексы не смещались
+            selected_rows = current_table.selectionModel().selectedRows()
+            for row in sorted(selected_rows, reverse=True):
+                model.removeRow(row.row()) # Удаляем строку
             model.submitAll() # Применяем изменения
             self.top_scroll_func()
             model.select() # Обновляем данные в таблице
@@ -724,31 +721,30 @@ class ExponatDBMS(QMainWindow):
 
         # Настройка заголовков
         self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа",
-                                                           "Пр-к  ф. НИР", "Рег. ном. НИР", "Наименование НИР",
-                                                           "Коды  ГРНТИ", "Руководитель НИР", "Должность",
+                                                           "Признак  формы  НИР", "Рег. номер НИР", "Наименование НИР",
+                                                           "Код  ГРНТИ", "Руководитель НИР", "Должность",
                                                            "Ученое звание", "Ученая степень",
-                                                           "Пр-к", "Выставки", "Выставочный экспонат"])
+                                                           "Признак", "Выставки", "Выставочный экспонат"])
 
         self.set_custom_headers(self.vuz_table_model,
                                 ["Код ВУЗа", "Название ВУЗа", "Полное наименование", "Сокр. наим.",
-                                 "Федеральный округ", 'Город', "Статус", "№ обл.", "Область", "Категория", "Профиль"])
+                                 "Федеральный округ", 'Город', "Статус", "Код субъекта", "Субъект РФ", "Категория", "Профиль"])
 
         self.set_custom_headers(self.grntirub_table_model, ["Код рубрики", "Наименование рубрики"])
-        self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Сокр. наим. ВУЗа",
-                                                        "Наименование НИР", "Коды  ГРНТИ", "Рубрики ГРНТИ", "Руководитель НИР",
+        self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Сокр. наименование ВУЗа",
+                                                        "Наименование НИР", "Код ГРНТИ", "Рубрика ГРНТИ", "Руководитель НИР",
                                                         "Должность", "Ученое звание", "Ученая степень",
                                                         "Рег. номер НИР", "Выставки", "Выставочный экспонат",
                                                         "Признак  формы НИР", "Признак", "Название ВУЗа",
-                                                        "Полное наименование",
-                                                        "Федеральный округ", 'Город', "Статус", "Номер области",
-                                                        "Область", "Категория", "Профиль"
+                                                        "Полное наименование ВУЗа",
+                                                        "Федеральный округ", 'Город', "Статус", "Код субъекта", "Субъект РФ",
+                                                        "Категория", "Профиль"
                                                         ])
 
         self.ui.vyst_mo_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.vuz_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.ui.group_list_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
@@ -1812,14 +1808,43 @@ class ExponatDBMS(QMainWindow):
                 selected_rows = current_table.selectionModel().selectedRows()
 
                 if selected_rows:
+          # Получаем номера выбранных строк
                     row_numbers = [row.row() + 1 for row in selected_rows]
-                    self.open_delete_confirm_dialog(row_numbers) # Передаем список номеров строк
+
+          # Формируем текст для диалогового окна
+                    message = self.format_row_numbers(row_numbers)
+
+          # Открываем диалог подтверждения
+                    self.open_delete_confirm_dialog(message)
                 else:
                     QMessageBox.warning(self, "Ошибка", "Выберите строки в таблице.")
             else:
                 QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
         else:
             QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
+
+    def format_row_numbers(self, row_numbers):
+        """Форматирует список номеров строк для вывода в диалоговом окне."""
+        row_numbers.sort()
+        formatted_numbers = []
+        current_range = []
+
+        for i, number in enumerate(row_numbers):
+            if i == 0 or number == row_numbers[i - 1] + 1:
+                current_range.append(number)
+            else:
+                if len(current_range) > 1:
+                    formatted_numbers.append(f"{current_range[0]}-{current_range[-1]}")
+                elif len(current_range) == 1:
+                    formatted_numbers.append(str(current_range[0]))
+                current_range = [number]
+
+        if len(current_range) > 1:
+            formatted_numbers.append(f"{current_range[0]}-{current_range[-1]}")
+        elif len(current_range) == 1:
+            formatted_numbers.append(str(current_range[0]))
+
+        return f"Удалить строки с номерами {', '.join(formatted_numbers)}?"
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No,
