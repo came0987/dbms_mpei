@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string/>
   </property>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="dialog_label">
    <property name="geometry">
     <rect>
      <x>90</x>
@@ -28,7 +28,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Добавление записи</string>
+    <string>Добавление записи выставки</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -250,7 +250,7 @@
      <x>10</x>
      <y>350</y>
      <width>541</width>
-     <height>111</height>
+     <height>112</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_14">
@@ -539,7 +539,7 @@
     <string/>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -625,7 +625,7 @@
     <rect>
      <x>10</x>
      <y>110</y>
-     <width>221</width>
+     <width>301</width>
      <height>16</height>
     </rect>
    </property>

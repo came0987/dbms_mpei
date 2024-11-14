@@ -10,14 +10,17 @@ from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 
 from connection import Session, Data
+from create_db import create_db_and_tables
+from py_ui.ui_create_group import Ui_create_group_dialog
 from py_ui.ui_create_vuz import Ui_create_vuz_dialog
 
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
-from table_models import VuzBase, VystMoBase, GrntiBase
+from table_models import VuzBase, VystMoBase, GrntiBase, GroupListBase, create_dynamic_table
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression, Qt
+
 class Regex:
     common_regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;\"\']+$")
     num_regex = QRegularExpression(r"^\d+$")
@@ -28,11 +31,11 @@ class Regex:
 class ExponatDBMS(QMainWindow):
 
     def __init__(self):
+        create_db_and_tables()
         super(ExponatDBMS, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.connection = Data()
-        # self.showMaximized()
         self.current_model = None  # Текущая модель для фильтрации
         self.filter_fields = {}  # Словарь для хранения полей фильтрации для каждого столбца
         self.ui.add_filters_cb.currentIndexChanged.connect(self.update_filter_input_field)
@@ -42,8 +45,10 @@ class ExponatDBMS(QMainWindow):
         self.ui.toplevel_layout.addLayout(self.filter_input_layout)  # Добавляем его в главный макет
 
         self.init_tables()
+        self.setFixedSize(1200, 751)
 
         self.ui.tables_menu.triggered.connect(self.set_current_table)
+        self.ui.groups_menu.triggered.connect(lambda: self.ui.pages_.setCurrentIndex(1) if self.ui.pages_.currentIndex()!=1 else ...)
 
         # Хранение состояния сортировки для каждой таблицы
         self.sort_states = {
@@ -65,28 +70,124 @@ class ExponatDBMS(QMainWindow):
 
         self.ui.delete_btn.clicked.connect(self.delete_button_action)
 
+        # self.ui.db_tables.currentWidget().children()[1].setVerticalScrollMode(
+        #     QAbstractItemView.ScrollMode.ScrollPerPixel)
+
+        self.top_scroll_func()
+
+        self.ui.pages_.setCurrentIndex(0)
+        self.ui.groups_pages.setCurrentIndex(0)
+        self.current_model = self.svod_table_model
+        self.ui.current_table_label.setText("Сводная таблица")
+        self.ui.create_btn.setEnabled(False)
+        self.ui.update_btn.setEnabled(False)
+        self.ui.group_cb.setEnabled(True)
+        self.ui.delete_btn.setEnabled(False)
+        self.clear_filter_input_fields()
+        self.update_filter_combobox()
+        self.show_all_rows()
+
+        self.ui.create_group_btn.clicked.connect(self.open_create_group_dialog)
+        self.ui.delete_group_btn.clicked.connect(self.delete_button_action)
+        # self.ui.group_list_table.doubleClicked.connect(self.open_group_table)
+
+    # @Slot()
+    # def open_group_table(self, index):
+    #     row = index.row()
+    #     db_table_name = self.group_list_table_model.record(row).value("db_table_name")
+    #     ui_table_name = self.group_list_table_model.record(row).value("ui_table_name")
+
+        # self.ui.group_name.setText(ui_table_name)
+        # self.
+        # self.ui.groups_pages.setCurrentIndex(1)
+
+
+
+
+    def top_scroll_func(self):
+        self.ui.db_tables.currentWidget().children()[1].setVerticalScrollMode(
+            QAbstractItemView.ScrollMode.ScrollPerPixel)
+        self.ui.db_tables.currentWidget().children()[1].scrollToBottom()
+        self.ui.db_tables.currentWidget().children()[1].scrollToTop()
+
+    def open_create_group_dialog(self):
+        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.ui_create_group_dialog = Ui_create_group_dialog()
+        self.ui_create_group_dialog.setupUi(self.new_dialog)
+        self.ui_create_group_dialog.save_btn.clicked.connect(self.create_group)
+
+        self.set_validation(Regex.common_regex, self.ui_create_group_dialog.group_name)
+
+        self.new_dialog.setFixedSize(310, 209)
+        self.new_dialog.setModal(True)
+        self.new_dialog.show()
+
+    def create_group(self):
+        Data.close_connection()
+        with Session() as session:
+        # Извлекаем все записи из таблицы Vuz
+            table_name_rec = session.query(GroupListBase.ui_table_name).all()
+        Data.create_connection()
+
+        ui_table_names = [row[0] for row in table_name_rec]
+
+        name = self.ui_create_group_dialog.group_name.text()
+
+        if name in ui_table_names:
+            self.ui_create_group_dialog.error_text.setText("группа с таким именем уже существует")
+            # QMessageBox.warning(self, "Ошибка", "Группа с таким именем уже существует.")
+        else:
+            Data.close_connection()
+            new_group = GroupListBase(
+                ui_table_name=name
+            )
+            with Session() as session:
+                try:
+                    session.add(new_group)
+                except:
+                    session.rollback()
+                    raise
+                else:
+                    session.commit()
+
+            db_table_name = session.query(GroupListBase.db_table_name).where(GroupListBase.ui_table_name==name).scalar()
+            print(db_table_name)
+            print("db_table_name:", db_table_name, type(db_table_name))
+            create_dynamic_table(db_table_name)
+
+            Data.create_connection()
+
+
+            if not self.group_list_table_model.submitAll():
+                print("Ошибка добавления записи:", self.group_list_table_model.lastError().text())
+            if self.group_list_table_model.select():
+                print("kaef")
+
+            self.apply_filters()
+            self.new_dialog.close()
 #######################################__ДОБАВЛЕНИЕ ЗАПИСИ__###########################################################
 
-    def open_create_entry_dialog(self):
+    def open_create_vyst_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
-        self.ui_create_entry_dialog = Ui_add_zapis_dialog()
-        self.ui_create_entry_dialog.setupUi(self.new_dialog)
-        self.ui_create_entry_dialog.save_btn.clicked.connect(self.create_vyst_entry)
+        self.ui_create_vyst_dialog = Ui_add_zapis_dialog()
+        self.ui_create_vyst_dialog.setupUi(self.new_dialog)
+        self.ui_create_vyst_dialog.save_btn.clicked.connect(self.create_vyst_entry)
 
-        self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
-        self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
+        self.ui_create_vyst_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
+        self.ui_create_vyst_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
 
-        self.ui_create_entry_dialog.vuz.setEditable(True)
-        self.ui_create_entry_dialog.codvuz.setEditable(True)
-        self.ui_create_entry_dialog.grnti.setValidator(QIntValidator(0, 99999999))
-        self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+        self.ui_create_vyst_dialog.vuz.setEditable(True)
+        self.ui_create_vyst_dialog.codvuz.setEditable(True)
+        self.ui_create_vyst_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        self.ui_create_vyst_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
 
-        self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+        self.ui_create_vyst_dialog.grnti.textChanged.connect(self.auto_insert_dots)
         # Разрешаем только буквы и пробелы
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.nir_ruk)
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_doljnost)
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_zvanie)
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_stepen)
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.nir_ruk)
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_doljnost)
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_zvanie)
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_stepen)
+        self.set_validation(Regex.num_regex, self.ui_create_vyst_dialog.grnti)
 
 
         Data.close_connection()
@@ -96,32 +197,32 @@ class ExponatDBMS(QMainWindow):
         Data.create_connection()
         # Заполняем оба ComboBox
         for vuz in vuz_records:
-            self.ui_create_entry_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
-            self.ui_create_entry_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
+            self.ui_create_vyst_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
+            self.ui_create_vyst_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
 
         # Заполняем ComboBox значениями
         vuz_list = [vuz.z1 for vuz in vuz_records]
         codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
 
         # Настройка комплитеров после заполнения ComboBox
-        vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
-        codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
+        vuz_completer = QCompleter(vuz_list, self.ui_create_vyst_dialog.vuz)
+        codvuz_completer = QCompleter(codvuz_list, self.ui_create_vyst_dialog.codvuz)
 
         vuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         codvuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 
-        self.ui_create_entry_dialog.vuz.setCompleter(vuz_completer)
-        self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
+        self.ui_create_vyst_dialog.vuz.setCompleter(vuz_completer)
+        self.ui_create_vyst_dialog.codvuz.setCompleter(codvuz_completer)
 
         # Ограничиваем ввод только существующими значениями
-        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(
-            lambda elem=self.ui_create_entry_dialog.vuz: self.validate_cb_input(elem)
+        self.ui_create_vyst_dialog.vuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vyst_dialog.vuz: self.validate_cb_input(elem)
         )
-        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(
-            lambda elem=self.ui_create_entry_dialog.codvuz: self.validate_cb_input(elem)
+        self.ui_create_vyst_dialog.codvuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vyst_dialog.codvuz: self.validate_cb_input(elem)
         )
 
-        self.new_dialog.setFixedSize(561, 664)
+        self.new_dialog.setFixedSize(561, 689)
         self.new_dialog.setModal(True)
         self.new_dialog.show()
 
@@ -141,9 +242,9 @@ class ExponatDBMS(QMainWindow):
 
         if not exists:
             # Если префикс отсутствует в базе данных, запрещаем дальнейший ввод
-            self.ui_create_entry_dialog.grnti.blockSignals(True)
-            self.ui_create_entry_dialog.grnti.setText(prefix)
-            self.ui_create_entry_dialog.grnti.blockSignals(False)
+            self.ui_create_vyst_dialog.grnti.blockSignals(True)
+            self.ui_create_vyst_dialog.grnti.setText(prefix)
+            self.ui_create_vyst_dialog.grnti.blockSignals(False)
 
     # def validate_vuz_input(self):
     #     input_text = self.ui_create_entry_dialog.vuz.currentText()
@@ -165,10 +266,10 @@ class ExponatDBMS(QMainWindow):
 
     def setup_grnti_input(self):
         # Подключаем обработчик textChanged для жёсткой фильтрации текста
-        self.ui_create_entry_dialog.grnti.textChanged.connect(self.filter_grnti_input)
+        self.ui_create_vyst_dialog.grnti.textChanged.connect(self.filter_grnti_input)
 
     def filter_grnti_input(self):
-        text = self.ui_create_entry_dialog.grnti.text()
+        text = self.ui_create_vyst_dialog.grnti.text()
 
         # Разрешаем только цифры, точки, точки с запятой и пробелы
         allowed_text = ''.join([ch for ch in text if ch.isdigit() or ch in ['.', ';', ' ']])
@@ -176,15 +277,15 @@ class ExponatDBMS(QMainWindow):
         # Проверяем, если текст был изменён (это значит, что были удалены недопустимые символы)
         if text != allowed_text:
             # Устанавливаем курсор на последнюю позицию, чтобы не сбивать пользователя
-            cursor_position = self.ui_create_entry_dialog.grnti.cursorPosition()
-            self.ui_create_entry_dialog.grnti.setText(allowed_text)
-            self.ui_create_entry_dialog.grnti.setCursorPosition(min(cursor_position, len(allowed_text)))
+            cursor_position = self.ui_create_vyst_dialog.grnti.cursorPosition()
+            self.ui_create_vyst_dialog.grnti.setText(allowed_text)
+            self.ui_create_vyst_dialog.grnti.setCursorPosition(min(cursor_position, len(allowed_text)))
 
         # Применяем автоформатирование для структуры "xx.xx.xx"
         self.auto_insert_dots()
 
     def auto_insert_dots(self):
-        text = self.ui_create_entry_dialog.grnti.text()
+        text = self.ui_create_vyst_dialog.grnti.text()
         segments = text.split(";")  # Разделяем на отдельные коды по ";"
         formatted_segments = []
 
@@ -209,32 +310,32 @@ class ExponatDBMS(QMainWindow):
         final_text = "; ".join(formatted_segments)
 
         # Обновляем текст в поле и устанавливаем курсор в конец
-        self.ui_create_entry_dialog.grnti.blockSignals(True)
-        self.ui_create_entry_dialog.grnti.setText(final_text)
-        self.ui_create_entry_dialog.grnti.blockSignals(False)
-        self.ui_create_entry_dialog.grnti.setCursorPosition(len(final_text))
+        self.ui_create_vyst_dialog.grnti.blockSignals(True)
+        self.ui_create_vyst_dialog.grnti.setText(final_text)
+        self.ui_create_vyst_dialog.grnti.blockSignals(False)
+        self.ui_create_vyst_dialog.grnti.setCursorPosition(len(final_text))
 
     def sync_codvuz_combo(self):
         # Получаем codvuz, связанный с текущим vuzname
-        selected_codvuz = self.ui_create_entry_dialog.vuz.currentData()
+        selected_codvuz = self.ui_create_vyst_dialog.vuz.currentData()
         # Находим и устанавливаем соответствующий элемент в codvuz_combo
         if selected_codvuz is not None:
-            index = self.ui_create_entry_dialog.codvuz.findText(selected_codvuz)
+            index = self.ui_create_vyst_dialog.codvuz.findText(selected_codvuz)
             if index != -1:
-                self.ui_create_entry_dialog.codvuz.blockSignals(True)
-                self.ui_create_entry_dialog.codvuz.setCurrentIndex(index)
-                self.ui_create_entry_dialog.codvuz.blockSignals(False)
+                self.ui_create_vyst_dialog.codvuz.blockSignals(True)
+                self.ui_create_vyst_dialog.codvuz.setCurrentIndex(index)
+                self.ui_create_vyst_dialog.codvuz.blockSignals(False)
 
     def sync_vuz_combo(self):
         # Получаем vuzname, связанный с текущим codvuz
-        selected_vuzname = self.ui_create_entry_dialog.codvuz.currentData()
+        selected_vuzname = self.ui_create_vyst_dialog.codvuz.currentData()
         # Находим и устанавливаем соответствующий элемент в vuzname_combo
         if selected_vuzname is not None:
-            index = self.ui_create_entry_dialog.vuz.findText(selected_vuzname)
+            index = self.ui_create_vyst_dialog.vuz.findText(selected_vuzname)
             if index != -1:
-                self.ui_create_entry_dialog.vuz.blockSignals(True)
-                self.ui_create_entry_dialog.vuz.setCurrentIndex(index)
-                self.ui_create_entry_dialog.vuz.blockSignals(False)
+                self.ui_create_vyst_dialog.vuz.blockSignals(True)
+                self.ui_create_vyst_dialog.vuz.setCurrentIndex(index)
+                self.ui_create_vyst_dialog.vuz.blockSignals(False)
 
     def update_button_action(self, func):
         current_widget = self.ui.db_tables.currentWidget()  # Получаем текущий виджет
@@ -253,26 +354,49 @@ class ExponatDBMS(QMainWindow):
         else:
             QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
 
-    def open_update_entry_dialog(self, model, selected_row):
+    def open_update_vyst_dialog(self, model, selected_row):
         self.new_dialog = PySide6.QtWidgets.QDialog()
-        self.ui_create_entry_dialog = Ui_add_zapis_dialog()
-        self.ui_create_entry_dialog.setupUi(self.new_dialog)
-        self.ui_create_entry_dialog.save_btn.clicked.connect(self.update_vyst_entry)
+        self.ui_create_vyst_dialog = Ui_add_zapis_dialog()
+        self.ui_create_vyst_dialog.setupUi(self.new_dialog)
+        self.ui_create_vyst_dialog.save_btn.clicked.connect(self.update_vyst_entry)
+        self.ui_create_vyst_dialog.dialog_label.setText("Редактирование записи выставки")
 
-        self.ui_create_entry_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
-        self.ui_create_entry_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
 
-        self.ui_create_entry_dialog.vuz.setEditable(True)
-        self.ui_create_entry_dialog.codvuz.setEditable(True)
-        self.ui_create_entry_dialog.grnti.setValidator(QIntValidator(0, 99999999))
-        self.ui_create_entry_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+        self.ui_create_vyst_dialog.vuz.currentIndexChanged.connect(self.sync_codvuz_combo)
+        self.ui_create_vyst_dialog.codvuz.currentIndexChanged.connect(self.sync_vuz_combo)
 
-        self.ui_create_entry_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+        self.ui_create_vyst_dialog.vuz.setEditable(True)
+        self.ui_create_vyst_dialog.codvuz.setEditable(True)
+        self.ui_create_vyst_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        self.ui_create_vyst_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
 
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.nir_ruk)
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_doljnost)
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_zvanie)
-        self.set_validation(Regex.common_regex, self.ui_create_entry_dialog.ruk_stepen)
+        self.ui_create_vyst_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.nir_ruk)
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_doljnost)
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_zvanie)
+        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_stepen)
+
+        self.ui_create_vyst_dialog.nir_name.textChanged.connect(
+            lambda: self.add_tooltip(self.ui_create_vyst_dialog.nir_name)
+        )
+        self.ui_create_vyst_dialog.nir_name.editingFinished.connect(
+            lambda: self.ui_create_vyst_dialog.nir_name.setCursorPosition(0)
+        )
+
+        self.ui_create_vyst_dialog.vistavka.textChanged.connect(
+            lambda: self.add_tooltip(self.ui_create_vyst_dialog.vistavka)
+        )
+        self.ui_create_vyst_dialog.vistavka.editingFinished.connect(
+            lambda: self.ui_create_vyst_dialog.vistavka.setCursorPosition(0)
+        )
+
+        self.ui_create_vyst_dialog.exponat_name.textChanged.connect(
+            lambda: self.add_tooltip(self.ui_create_vyst_dialog.exponat_name)
+        )
+        self.ui_create_vyst_dialog.exponat_name.editingFinished.connect(
+            lambda: self.ui_create_vyst_dialog.exponat_name.setCursorPosition(0)
+        )
 
         Data.close_connection()
         with Session() as session:
@@ -281,8 +405,8 @@ class ExponatDBMS(QMainWindow):
         Data.create_connection()
         # Заполняем оба ComboBox
         for vuz in vuz_records:
-            self.ui_create_entry_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
-            self.ui_create_entry_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
+            self.ui_create_vyst_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
+            self.ui_create_vyst_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
 
         row_data = self.get_selected_row_data(model, selected_row)
         exp_est = {
@@ -295,50 +419,55 @@ class ExponatDBMS(QMainWindow):
             "М": "НТП"
         }
 
-        self.ui_create_entry_dialog.codvuz.setCurrentText(str(row_data[1]))
-        self.ui_create_entry_dialog.priznak.setCurrentText(prizn[row_data[2]])
-        self.ui_create_entry_dialog.reg_number.setText(row_data[3])
-        self.ui_create_entry_dialog.nir_name.setText(row_data[4])
-        self.ui_create_entry_dialog.grnti.setText(row_data[5])
-        self.ui_create_entry_dialog.nir_ruk.setText(row_data[6])
-        self.ui_create_entry_dialog.ruk_doljnost.setText(row_data[7])
-        self.ui_create_entry_dialog.ruk_zvanie.setText(row_data[8])
-        self.ui_create_entry_dialog.ruk_stepen.setText(row_data[9])
-        self.ui_create_entry_dialog.exponat_est.setCurrentText(exp_est[row_data[10]])
-        self.ui_create_entry_dialog.vistavka.setText(row_data[11])
-        self.ui_create_entry_dialog.exponat_name.setText(row_data[12])
+        self.ui_create_vyst_dialog.codvuz.setCurrentText(str(row_data[1]))
+        self.ui_create_vyst_dialog.priznak.setCurrentText(prizn[row_data[2]])
+        self.ui_create_vyst_dialog.reg_number.setText(row_data[3])
+        self.ui_create_vyst_dialog.nir_name.setText(row_data[4])
+        self.ui_create_vyst_dialog.grnti.setText(row_data[5])
+        self.ui_create_vyst_dialog.nir_ruk.setText(row_data[6])
+        self.ui_create_vyst_dialog.ruk_doljnost.setText(row_data[7])
+        self.ui_create_vyst_dialog.ruk_zvanie.setText(row_data[8])
+        self.ui_create_vyst_dialog.ruk_stepen.setText(row_data[9])
+        self.ui_create_vyst_dialog.exponat_est.setCurrentText(exp_est[row_data[10]])
+        self.ui_create_vyst_dialog.vistavka.setText(row_data[11])
+        self.ui_create_vyst_dialog.exponat_name.setText(row_data[12])
+
+        self.ui_create_vyst_dialog.nir_name.setCursorPosition(0)
+        self.ui_create_vyst_dialog.vistavka.setCursorPosition(0)
+        self.ui_create_vyst_dialog.exponat_name.setCursorPosition(0)
+
 
         # Заполняем ComboBox значениями
         vuz_list = [vuz.z1 for vuz in vuz_records]
         codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
 
         # Настройка комплитеров после заполнения ComboBox
-        vuz_completer = QCompleter(vuz_list, self.ui_create_entry_dialog.vuz)
-        codvuz_completer = QCompleter(codvuz_list, self.ui_create_entry_dialog.codvuz)
+        vuz_completer = QCompleter(vuz_list, self.ui_create_vyst_dialog.vuz)
+        codvuz_completer = QCompleter(codvuz_list, self.ui_create_vyst_dialog.codvuz)
 
         vuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
         codvuz_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 
-        self.ui_create_entry_dialog.vuz.setCompleter(vuz_completer)
-        self.ui_create_entry_dialog.codvuz.setCompleter(codvuz_completer)
+        self.ui_create_vyst_dialog.vuz.setCompleter(vuz_completer)
+        self.ui_create_vyst_dialog.codvuz.setCompleter(codvuz_completer)
 
         # Ограничиваем ввод только существующими значениями
-        self.ui_create_entry_dialog.vuz.lineEdit().editingFinished.connect(
-            lambda elem=self.ui_create_entry_dialog.vuz: self.validate_cb_input(elem)
+        self.ui_create_vyst_dialog.vuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vyst_dialog.vuz: self.validate_cb_input(elem)
         )
-        self.ui_create_entry_dialog.codvuz.lineEdit().editingFinished.connect(
-            lambda elem=self.ui_create_entry_dialog.codvuz: self.validate_cb_input(elem)
+        self.ui_create_vyst_dialog.codvuz.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vyst_dialog.codvuz: self.validate_cb_input(elem)
         )
 
         Data.close_connection()
         current_obj = VystMoBase.get_by_name_2(row_data[1], row_data[3])
         Data.create_connection()
-        print(row_data[1], row_data[3])
-        print(current_obj)
+        # print(row_data[1], row_data[3])
+        # print(current_obj)
 
-        self.ui_create_entry_dialog.save_btn.clicked.connect(self.update_vyst_entry)
+        self.ui_create_vyst_dialog.save_btn.clicked.connect(self.update_vyst_entry)
         self.current_obj = current_obj
-        self.new_dialog.setFixedSize(561, 664)
+        self.new_dialog.setFixedSize(561, 689)
         self.new_dialog.setModal(True)
         self.new_dialog.show()
 
@@ -365,18 +494,18 @@ class ExponatDBMS(QMainWindow):
             "Тематический план": "Е",
             "НТП": "М"
         }
-        codvuz = self.ui_create_entry_dialog.codvuz.currentText()
-        priznak = prizn[self.ui_create_entry_dialog.priznak.currentText()]
-        reg_number = self.ui_create_entry_dialog.reg_number.text()
-        nir_name = self.ui_create_entry_dialog.nir_name.text()
-        grnti = self.ui_create_entry_dialog.grnti.text()
-        nir_ruk = self.ui_create_entry_dialog.nir_ruk.text()
-        ruk_doljnost = self.ui_create_entry_dialog.ruk_doljnost.text()
-        ruk_zvanie = self.ui_create_entry_dialog.ruk_zvanie.text()
-        ruk_stepen = self.ui_create_entry_dialog.ruk_stepen.text()
-        exponat_est = exp_est[self.ui_create_entry_dialog.exponat_est.currentText()]
-        vistavka = self.ui_create_entry_dialog.vistavka.text()
-        exponat_name = self.ui_create_entry_dialog.exponat_name.text()
+        codvuz = self.ui_create_vyst_dialog.codvuz.currentText()
+        priznak = prizn[self.ui_create_vyst_dialog.priznak.currentText()]
+        reg_number = self.ui_create_vyst_dialog.reg_number.text()
+        nir_name = self.ui_create_vyst_dialog.nir_name.text()
+        grnti = self.ui_create_vyst_dialog.grnti.text()
+        nir_ruk = self.ui_create_vyst_dialog.nir_ruk.text()
+        ruk_doljnost = self.ui_create_vyst_dialog.ruk_doljnost.text()
+        ruk_zvanie = self.ui_create_vyst_dialog.ruk_zvanie.text()
+        ruk_stepen = self.ui_create_vyst_dialog.ruk_stepen.text()
+        exponat_est = exp_est[self.ui_create_vyst_dialog.exponat_est.currentText()]
+        vistavka = self.ui_create_vyst_dialog.vistavka.text()
+        exponat_name = self.ui_create_vyst_dialog.exponat_name.text()
 
         Data.close_connection()
 
@@ -407,6 +536,7 @@ class ExponatDBMS(QMainWindow):
         if self.vyst_mo_table_model.select():
             print("kaef")
 
+        self.apply_filters()
         self.new_dialog.close()
 
     def create_vyst_entry(self):
@@ -419,18 +549,18 @@ class ExponatDBMS(QMainWindow):
             "Тематический план": "Е",
             "НТП": "М"
         }
-        codvuz = self.ui_create_entry_dialog.codvuz.currentText()
-        priznak = prizn[self.ui_create_entry_dialog.priznak.currentText()]
-        reg_number = self.ui_create_entry_dialog.reg_number.text()
-        nir_name = self.ui_create_entry_dialog.nir_name.text()
-        grnti = self.ui_create_entry_dialog.grnti.text()
-        nir_ruk = self.ui_create_entry_dialog.grnti.text()
-        ruk_doljnost = self.ui_create_entry_dialog.ruk_doljnost.text()
-        ruk_zvanie = self.ui_create_entry_dialog.ruk_zvanie.text()
-        ruk_stepen = self.ui_create_entry_dialog.ruk_stepen.text()
-        exponat_est = exp_est[self.ui_create_entry_dialog.exponat_est.currentText()]
-        vistavka = self.ui_create_entry_dialog.vistavka.text()
-        exponat_name = self.ui_create_entry_dialog.exponat_name.text()
+        codvuz = self.ui_create_vyst_dialog.codvuz.currentText()
+        priznak = prizn[self.ui_create_vyst_dialog.priznak.currentText()]
+        reg_number = self.ui_create_vyst_dialog.reg_number.text()
+        nir_name = self.ui_create_vyst_dialog.nir_name.text()
+        grnti = self.ui_create_vyst_dialog.grnti.text()
+        nir_ruk = self.ui_create_vyst_dialog.nir_ruk.text()
+        ruk_doljnost = self.ui_create_vyst_dialog.ruk_doljnost.text()
+        ruk_zvanie = self.ui_create_vyst_dialog.ruk_zvanie.text()
+        ruk_stepen = self.ui_create_vyst_dialog.ruk_stepen.text()
+        exponat_est = exp_est[self.ui_create_vyst_dialog.exponat_est.currentText()]
+        vistavka = self.ui_create_vyst_dialog.vistavka.text()
+        exponat_name = self.ui_create_vyst_dialog.exponat_name.text()
 
         Data.close_connection()
 
@@ -454,6 +584,7 @@ class ExponatDBMS(QMainWindow):
         if self.vyst_mo_table_model.select():
             print("kaef")
 
+        self.apply_filters()
         self.new_dialog.close()
 
     def open_delete_confirm_dialog(self, row_numbers):
@@ -482,10 +613,17 @@ class ExponatDBMS(QMainWindow):
         # Удаляем строки в обратном порядке, чтобы индексы не смещались
             for row_number in sorted(row_numbers, reverse=True):
                 model.removeRow(row_number - 1) # Удаляем строку
+            self.top_scroll_func()
             model.submitAll() # Применяем изменения
+            self.top_scroll_func()
             model.select() # Обновляем данные в таблице
+            self.top_scroll_func()
 
-        self.confirm_dialog.close() # Закрываем диалог
+        self.apply_filters()
+        self.top_scroll_func()
+        self.confirm_dialog.close()
+        self.top_scroll_func()
+        # Закрываем диалог
 
     def init_tables(self):
         # self.models = {
@@ -497,23 +635,27 @@ class ExponatDBMS(QMainWindow):
         self.vuz_table_model = self.create_model("vuz")
         self.grntirub_table_model = self.create_model("grnti")
         self.svod_table_model = self.create_model("svod")
+        self.group_list_table_model = self.create_model("grouplist")
 
         # Устанавливаем модели и заголовки
         self.ui.vyst_mo_table.setModel(self.vyst_mo_table_model)
         self.ui.vuz_table.setModel(self.vuz_table_model)
         self.ui.grntirub_table.setModel(self.grntirub_table_model)
         self.ui.svod_table.setModel(self.svod_table_model)
+        self.ui.group_list_table.setModel(self.group_list_table_model)
 
         self.ui.svod_table.hideColumn(0)
         self.ui.vyst_mo_table.hideColumn(0)
         self.ui.grntirub_table.hideColumn(0)
         self.ui.vuz_table.hideColumn(0)
+        self.ui.group_list_table.hideColumn(0)
 
         # Отключаем сортировку по заголовкам при первом выводе
         self.ui.vyst_mo_table.setSortingEnabled(False)
         self.ui.vuz_table.setSortingEnabled(False)
         self.ui.grntirub_table.setSortingEnabled(False)
         self.ui.svod_table.setSortingEnabled(False)
+        self.ui.group_list_table.setSortingEnabled(False)
 
         # Настройка заголовков
         self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа",
@@ -541,6 +683,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.vuz_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.ui.group_list_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
@@ -555,9 +698,12 @@ class ExponatDBMS(QMainWindow):
         self.ui.svod_table.horizontalHeader().sectionClicked.connect(
             lambda index: self.handle_header_click(self.ui.svod_table, index)
         )
+        self.ui.group_list_table.horizontalHeader().sectionClicked.connect(
+            lambda index: self.handle_header_click(self.ui.svod_table, index)
+        )
 
         # Устанавливаем режим растягивания заголовков
-        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table]:
+        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table, self.ui.group_list_table]:
             #плавная прокрутка
             table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
 
@@ -582,51 +728,68 @@ class ExponatDBMS(QMainWindow):
 
         while self.vyst_mo_table_model.canFetchMore():
             self.vyst_mo_table_model.fetchMore()
+# TODO
+        while self.svod_table_model.canFetchMore():
+            self.svod_table_model.fetchMore()
+
 
     def set_current_table(self, checked_action):
         """Switches the current table and resets the filters."""
         # Очистка полей ввода фильтров при переключении таблиц
         self.clear_filter_input_fields()
 
+        if self.ui.pages_.currentIndex() != 0:
+            self.ui.pages_.setCurrentIndex(0)
+
         # Смена таблицы
         text = checked_action.text()
         if text == "ГРНТИ":
             self.ui.db_tables.setCurrentIndex(3)
             self.current_model = self.grntirub_table_model
-            self.ui.create_btn.setEnabled(True)
-            self.ui.update_btn.setEnabled(True)
+            self.ui.current_table_label.setText("Таблица «ГРНТИ»")
+            self.top_scroll_func()
+            self.ui.create_btn.setEnabled(False)
+            self.ui.update_btn.setEnabled(False)
+            self.ui.group_cb.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
             # print(self.get_column_values(self.ui.grntirub_table, "Код рубрики"))
         elif text == "Выставки":
             self.ui.db_tables.setCurrentIndex(1)
             self.current_model = self.vyst_mo_table_model
+            self.ui.current_table_label.setText("Таблица «Выставки»")
+            self.top_scroll_func()
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
+            self.ui.group_cb.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
-            self.ui.create_btn.clicked.connect(self.open_create_entry_dialog)
-            # func = self.open_create_entry_dialog
+
+            self.ui.create_btn.clicked.connect(self.open_create_vyst_dialog)
             self.ui.update_btn.clicked.connect(
-                lambda: self.update_button_action(func=self.open_update_entry_dialog)
+                lambda: self.update_button_action(func=self.open_update_vyst_dialog)
             )
-            # print(self.get_column_values(self.ui.vyst_mo_table, "Признак  формы НИР"))
         elif text == "ВУЗы":
             self.ui.db_tables.setCurrentIndex(2)
             self.current_model = self.vuz_table_model
+            self.ui.current_table_label.setText("Таблица «ВУЗы»")
+            self.top_scroll_func()
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
+            self.ui.group_cb.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
+
             self.ui.create_btn.clicked.connect(self.open_create_vuz_dialog)
-            # self.ui.update_btn.clicked.connect(
-            #     lambda: self.update_button_action(func=self.open_update_entry_dialog)
-            # )
-            # print(self.get_column_values(self.ui.vuz_table, "Полное наименование"))
+            self.ui.update_btn.clicked.connect(
+                lambda: self.update_button_action(func=self.open_update_vuz_dialog)
+            )
         elif text == "Сводная таблица":
             self.ui.db_tables.setCurrentIndex(0)
             self.current_model = self.svod_table_model
+            self.ui.current_table_label.setText("Сводная таблица")
+            self.top_scroll_func()
             self.ui.create_btn.setEnabled(False)
             self.ui.update_btn.setEnabled(False)
+            self.ui.group_cb.setEnabled(True)
             self.ui.delete_btn.setEnabled(False)
-            # print(self.get_column_values(self.ui.svod_table, "Руководитель НИР"))
 
             #TODO ATTENTION ТЫ ТЕСТИРОВАЛ НОЧЬЮ ФУНКЦИЮ GET_COLUMN_VALUES, ОНА РАБОТАЕТ, НО ПОЧЕМУ ТО 2 РАЗА ВЫВОДИЛА КОРОЧЕ РЕЗУЛЬТАТ,
             #СКОРЕЕ ВСЕГО СВЯЗАНО С КНОПКОЙ МЕНЮ
@@ -638,7 +801,6 @@ class ExponatDBMS(QMainWindow):
         self.show_all_rows()
 
     def open_create_vuz_dialog(self):
-
         subj_list = ["",
 "Республика Адыгея",
 "Республика Башкортостан",
@@ -824,7 +986,21 @@ class ExponatDBMS(QMainWindow):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_vuz_dialog = Ui_create_vuz_dialog()
         self.ui_create_vuz_dialog.setupUi(self.new_dialog)
-        self.ui_create_vuz_dialog.save_btn.clicked.connect(self.create_vyst_entry)
+        self.ui_create_vuz_dialog.save_btn.clicked.connect(self.create_vuz)
+
+        self.ui_create_vuz_dialog.vuz_full_name.textChanged.connect(
+            lambda: self.add_tooltip(self.ui_create_vuz_dialog.vuz_full_name)
+        )
+        self.ui_create_vuz_dialog.vuz_full_name.editingFinished.connect(
+            lambda: self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
+        )
+
+        self.ui_create_vuz_dialog.vuz_name.textChanged.connect(
+            lambda: self.add_tooltip(self.ui_create_vuz_dialog.vuz_full_name)
+        )
+        self.ui_create_vuz_dialog.vuz_name.editingFinished.connect(
+            lambda: self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
+        )
 
         self.ui_create_vuz_dialog.federal_subject_cb.addItems(subj_list)
         self.ui_create_vuz_dialog.federal_subject_code_cb.addItems(codes_list)
@@ -844,7 +1020,7 @@ class ExponatDBMS(QMainWindow):
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_short_name)
         self.set_validation(Regex.num_regex, self.ui_create_vuz_dialog.vuz_code)
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_name)
-        # self.set_validation(Regex.common_regex, self.ui_create_vuz_dialog.vuz_full_name)
+        self.set_validation(Regex.common_regex, self.ui_create_vuz_dialog.vuz_full_name)
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.city)
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_status)
         self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_category)
@@ -888,10 +1064,298 @@ class ExponatDBMS(QMainWindow):
             lambda elem=self.ui_create_vuz_dialog.federal_region_cb: self.validate_cb_input(elem)
         )
 
-        # Регулярное выражение для разрешения только букв в nir_ruk
-        # regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;]+$")
-        # validator = QRegularExpressionValidator(regex, self.ui_create_vuz_dialog.nir_ruk)
-        # self.ui_create_vuz_dialog.nir_ruk.setValidator(validator)
+        self.new_dialog.setFixedSize(468, 573)
+        self.new_dialog.setModal(True)
+        self.new_dialog.show()
+
+    def open_update_vuz_dialog(self, model, selected_row):
+        subj_list = ["",
+                     "Республика Адыгея",
+                     "Республика Башкортостан",
+                     "Республика Бурятия",
+                     "Республика Алтай",
+                     "Республика Дагестан",
+                     "Республика Ингушетия",
+                     "Кабардино-Балкарская Республика",
+                     "Республика Калмыкия",
+                     "Карачаево-Черкесская Республика",
+                     "Республика Карелия",
+                     "Республика Коми",
+                     "Республика Марий Эл",
+                     "Республика Мордовия",
+                     "Республика Саха (Якутия)",
+                     "Республика Северная Осетия - Алания",
+                     "Республика Татарстан (Татарстан)",
+                     "Республика Тыва",
+                     "Удмуртская Республика",
+                     "Республика Хакасия",
+                     "Чеченская Республика",
+                     "Чувашская Республика - Чувашия",
+                     "Алтайский край",
+                     "Краснодарский край",
+                     "Красноярский край",
+                     "Приморский край",
+                     "Ставропольский край",
+                     "Хабаровский край",
+                     "Амурская область",
+                     "Архангельская область",
+                     "Астраханская область",
+                     "Белгородская область",
+                     "Брянская область",
+                     "Владимирская область",
+                     "Волгоградская область",
+                     "Вологодская область",
+                     "Воронежская область",
+                     "Ивановская область",
+                     "Иркутская область",
+                     "Калининградская область",
+                     "Калужская область",
+                     "Камчатский край",
+                     "Кемеровская область",
+                     "Кировская область",
+                     "Костромская область",
+                     "Курганская область",
+                     "Курская область",
+                     "Ленинградская область",
+                     "Липецкая область",
+                     "Магаданская область",
+                     "Московская область",
+                     "Мурманская область",
+                     "Нижегородская область",
+                     "Новгородская область",
+                     "Новосибирская область",
+                     "Омская область",
+                     "Оренбургская область",
+                     "Орловская область",
+                     "Пензенская область",
+                     "Пермский край",
+                     "Псковская область",
+                     "Ростовская область",
+                     "Рязанская область",
+                     "Самарская область",
+                     "Саратовская область",
+                     "Сахалинская область",
+                     "Свердловская область",
+                     "Смоленская область",
+                     "Тамбовская область",
+                     "Тверская область",
+                     "Томская область",
+                     "Тульская область",
+                     "Тюменская область",
+                     "Ульяновская область",
+                     "Челябинская область",
+                     "Забайкальский край",
+                     "Ярославская область",
+                     "г. Москва",
+                     "г. Санкт-Петербург",
+                     "Еврейская автономная область",
+                     "Ненецкий автономный округ",
+                     "Ханты-Мансийский АО - Югра",
+                     "Чукотский автономный округ",
+                     "Ямало-Ненецкий автономный округ",
+                     "Республика Крым",
+                     "г. Севастополь",
+                     "Запорожская область",
+                     "Донецкая Народная Республика",
+                     "Луганская Народная Республика",
+                     "Херсонская область"]
+        codes_list = ["",
+                      "01",
+                      "02",
+                      "03",
+                      "04",
+                      "05",
+                      "06",
+                      "07",
+                      "08",
+                      "09",
+                      "10",
+                      "11",
+                      "12",
+                      "13",
+                      "14",
+                      "15",
+                      "16",
+                      "17",
+                      "18",
+                      "19",
+                      "20",
+                      "21",
+                      "22",
+                      "23",
+                      "24",
+                      "25",
+                      "26",
+                      "27",
+                      "28",
+                      "29",
+                      "30",
+                      "31",
+                      "32",
+                      "33",
+                      "34",
+                      "35",
+                      "36",
+                      "37",
+                      "38",
+                      "39",
+                      "40",
+                      "41",
+                      "42",
+                      "43",
+                      "44",
+                      "45",
+                      "46",
+                      "47",
+                      "48",
+                      "49",
+                      "50",
+                      "51",
+                      "52",
+                      "53",
+                      "54",
+                      "55",
+                      "56",
+                      "57",
+                      "58",
+                      "59",
+                      "60",
+                      "61",
+                      "62",
+                      "63",
+                      "64",
+                      "65",
+                      "66",
+                      "67",
+                      "68",
+                      "69",
+                      "70",
+                      "71",
+                      "72",
+                      "73",
+                      "74",
+                      "75",
+                      "76",
+                      "77",
+                      "78",
+                      "79",
+                      "83",
+                      "86",
+                      "87",
+                      "89",
+                      "91",
+                      "92",
+                      "90",
+                      "93",
+                      "94",
+                      "95"]
+        federal_regions = ["", "Центральный", "Северо-Западный", "Южный", "Приволжский", "Уральский", "Сибирский",
+                           "Дальневосточный", "Северо-Кавказский"]
+
+        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.ui_create_vuz_dialog = Ui_create_vuz_dialog()
+        self.ui_create_vuz_dialog.setupUi(self.new_dialog)
+        self.ui_create_vuz_dialog.save_btn.clicked.connect(self.update_vuz)
+        self.ui_create_vuz_dialog.dialog_label.setText("Редактирование записи ВУЗа")
+
+        self.ui_create_vuz_dialog.vuz_full_name.textChanged.connect(
+            lambda: self.add_tooltip(self.ui_create_vuz_dialog.vuz_full_name)
+        )
+        self.ui_create_vuz_dialog.vuz_full_name.editingFinished.connect(
+            lambda: self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
+        )
+
+        self.ui_create_vuz_dialog.vuz_name.textChanged.connect(
+            lambda: self.add_tooltip(self.ui_create_vuz_dialog.vuz_full_name)
+        )
+        self.ui_create_vuz_dialog.vuz_name.editingFinished.connect(
+            lambda: self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
+        )
+
+        self.ui_create_vuz_dialog.federal_subject_cb.addItems(subj_list)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.addItems(codes_list)
+        self.ui_create_vuz_dialog.federal_region_cb.addItems(federal_regions)
+
+        self.ui_create_vuz_dialog.federal_subject_cb.currentIndexChanged.connect(self.sync_federal_code_combo)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.currentIndexChanged.connect(self.sync_federal_name_combo)
+
+        self.ui_create_vuz_dialog.federal_subject_cb.setEditable(True)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.setEditable(True)
+        self.ui_create_vuz_dialog.federal_region_cb.setEditable(True)
+        # self.ui_create_vuz_dialog.grnti.setValidator(QIntValidator(0, 99999999))
+        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
+
+        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.auto_insert_dots)
+
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_short_name)
+        self.set_validation(Regex.num_regex, self.ui_create_vuz_dialog.vuz_code)
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_name)
+        self.set_validation(Regex.common_regex, self.ui_create_vuz_dialog.vuz_full_name)
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.city)
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_status)
+        self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_category)
+        self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_profile)
+
+        # Data.close_connection()
+        # with Session() as session:
+        # # Извлекаем все записи из таблицы Vuz
+        #     vuz_records = session.query(VuzBase).all()
+        # Data.create_connection()
+        # # Заполняем оба ComboBox
+        # for vuz in vuz_records:
+        #     self.ui_create_vuz_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
+        #     self.ui_create_vuz_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
+
+        # Заполняем ComboBox значениями
+        # vuz_list = [vuz.z1 for vuz in vuz_records]
+        # codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
+
+        # Настройка комплитеров после заполнения ComboBox
+        subject_name_completer = QCompleter(subj_list, self.ui_create_vuz_dialog.federal_subject_cb)
+        subject_code_completer = QCompleter(codes_list, self.ui_create_vuz_dialog.federal_subject_code_cb)
+        federal_regions_completer = QCompleter(federal_regions, self.ui_create_vuz_dialog.federal_region_cb)
+
+        subject_name_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        subject_code_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        federal_regions_completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+
+        self.ui_create_vuz_dialog.federal_subject_cb.setCompleter(subject_name_completer)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.setCompleter(subject_code_completer)
+        self.ui_create_vuz_dialog.federal_region_cb.setCompleter(federal_regions_completer)
+
+        # Ограничиваем ввод только существующими значениями
+        self.ui_create_vuz_dialog.federal_subject_cb.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vuz_dialog.federal_subject_cb: self.validate_cb_input(elem)
+        )
+        self.ui_create_vuz_dialog.federal_subject_code_cb.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vuz_dialog.federal_subject_code_cb: self.validate_cb_input(elem)
+        )
+        self.ui_create_vuz_dialog.federal_region_cb.lineEdit().editingFinished.connect(
+            lambda elem=self.ui_create_vuz_dialog.federal_region_cb: self.validate_cb_input(elem)
+        )
+
+        row_data = self.get_selected_row_data(model, selected_row)
+
+        self.ui_create_vuz_dialog.vuz_code.setText(str(row_data[1]))
+        self.ui_create_vuz_dialog.vuz_name.setText(row_data[2])
+        self.ui_create_vuz_dialog.vuz_full_name.setText(row_data[3])
+        self.ui_create_vuz_dialog.vuz_short_name.setText(row_data[4])
+        self.ui_create_vuz_dialog.federal_region_cb.setCurrentText(row_data[5])
+        self.ui_create_vuz_dialog.city.setText(row_data[6])
+        self.ui_create_vuz_dialog.vuz_status.setText(row_data[7])
+        self.ui_create_vuz_dialog.federal_subject_code_cb.setCurrentText(str(row_data[8]))
+        self.ui_create_vuz_dialog.federal_subject_cb.setCurrentText(row_data[9])
+        self.ui_create_vuz_dialog.vuz_category.setText(row_data[10])
+        self.ui_create_vuz_dialog.vuz_profile.setText(row_data[11])
+
+        self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
+        self.ui_create_vuz_dialog.vuz_name.setCursorPosition(0)
+
+        Data.close_connection()
+        current_obj = VuzBase.get_by_name(row_data[1])
+        Data.create_connection()
+
+        self.current_obj = current_obj
 
         self.new_dialog.setFixedSize(468, 573)
         self.new_dialog.setModal(True)
@@ -912,7 +1376,97 @@ class ExponatDBMS(QMainWindow):
         combobox.blockSignals(False)
 
     @staticmethod
-    def set_validation(regex, element: QLineEdit):
+    def add_tooltip(element: QLineEdit):
+        element.setToolTip(element.text())
+
+    def create_vuz(self):
+        short_name = self.ui_create_vuz_dialog.vuz_short_name.text()
+        code = self.ui_create_vuz_dialog.vuz_code.text()
+        name = self.ui_create_vuz_dialog.vuz_name.text()
+        full_name = self.ui_create_vuz_dialog.vuz_full_name.text()
+        federal_region = self.ui_create_vuz_dialog.federal_region_cb.currentText()
+        city = self.ui_create_vuz_dialog.city.text()
+        federal_subject = self.ui_create_vuz_dialog.federal_subject_cb.currentText()
+        federal_subject_code = self.ui_create_vuz_dialog.federal_subject_code_cb.currentText()
+        status = self.ui_create_vuz_dialog.vuz_status.text()
+        category = self.ui_create_vuz_dialog.vuz_category.text()
+        profile = self.ui_create_vuz_dialog.vuz_profile.text()
+
+        Data.close_connection()
+        new_vuz = VuzBase(
+            codvuz=code, z1=name, z1full=full_name, z2=short_name,
+            region=federal_region, city=city, status=status,
+            obl=federal_subject_code, oblname=federal_subject,
+            gr_ved=category, prof=profile
+        )
+        with Session() as session:
+            try:
+                session.add(new_vuz)
+            except:
+                session.rollback()
+                raise
+            else:
+                session.commit()
+        Data.create_connection()
+
+        if not self.vuz_table_model.submitAll():
+            print("Ошибка добавления записи:", self.vuz_table_model.lastError().text())
+        if self.vuz_table_model.select():
+            print("kaef")
+
+        self.apply_filters()
+        self.new_dialog.close()
+
+    def update_vuz(self):
+        current_obj = self.current_obj
+
+        short_name = self.ui_create_vuz_dialog.vuz_short_name.text()
+        code = self.ui_create_vuz_dialog.vuz_code.text()
+        name = self.ui_create_vuz_dialog.vuz_name.text()
+        full_name = self.ui_create_vuz_dialog.vuz_full_name.text()
+        federal_region = self.ui_create_vuz_dialog.federal_region_cb.currentText()
+        city = self.ui_create_vuz_dialog.city.text()
+        federal_subject = self.ui_create_vuz_dialog.federal_subject_cb.currentText()
+        federal_subject_code = self.ui_create_vuz_dialog.federal_subject_code_cb.currentText()
+        status = self.ui_create_vuz_dialog.vuz_status.text()
+        category = self.ui_create_vuz_dialog.vuz_category.text()
+        profile = self.ui_create_vuz_dialog.vuz_profile.text()
+
+        Data.close_connection()
+
+        with Session() as session:
+            try:
+                current_obj.codvuz = code
+                current_obj.z1 = name
+                current_obj.z1full = full_name
+                current_obj.z2 = short_name
+                current_obj.region = federal_region
+                current_obj.city = city
+                current_obj.status = status
+                current_obj.obl = federal_subject_code
+                current_obj.oblname = federal_subject
+                current_obj.gr_ved = category
+                current_obj.prof = profile
+
+                session.merge(current_obj)
+            except:
+                session.rollback()
+                raise
+            else:
+                session.commit()
+
+        Data.create_connection()
+
+        if not self.vuz_table_model.submitAll():
+            print("Ошибка добавления записи:", self.vuz_table_model.lastError().text())
+        if self.vuz_table_model.select():
+            print("kaef")
+
+        self.apply_filters()
+        self.new_dialog.close()
+
+    @staticmethod
+    def set_validation(regex: QRegularExpression, element: QLineEdit):
         validator = QRegularExpressionValidator(regex, element)
         element.setValidator(validator)
 
@@ -1002,7 +1556,9 @@ class ExponatDBMS(QMainWindow):
                 filter_conditions[filter_key] = filter_values
 
         # Apply filters to the current model and show rows accordingly
+        self.top_scroll_func()
         self.filter_table(filter_conditions)
+        self.top_scroll_func()
 
     def filter_table(self, filter_conditions):
         """Apply filters to the currently selected table."""
@@ -1084,7 +1640,11 @@ class ExponatDBMS(QMainWindow):
     def clear_all_filters(self):
         """Сбрасываем все фильтры и показываем все строки во всех таблицах."""
         # Показываем все строки во всех таблицах
+
+        self.top_scroll_func()
         self.show_all_rows()
+
+        self.top_scroll_func()
 
         # Очищаем словарь фильтров
         self.filter_fields.clear()
@@ -1230,6 +1790,7 @@ class ExponatDBMS(QMainWindow):
             self.remove_filter(filter_name)
 
     def remove_filter(self, filter_name):
+        self.top_scroll_func()
         if filter_name in self.filter_fields:
             layout_to_remove = self.filter_fields.pop(filter_name)
 
@@ -1238,9 +1799,10 @@ class ExponatDBMS(QMainWindow):
                 widget = layout_to_remove.itemAt(i).widget()
                 if widget is not None:
                     widget.setParent(None)
-
+            self.top_scroll_func()
             # Перестроение сетки после удаления
             self.rebuild_filter_grid()
+            self.top_scroll_func()
 
 
 class NonEditableSqlTableModel(QSqlTableModel):

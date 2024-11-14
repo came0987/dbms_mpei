@@ -1,9 +1,10 @@
 from PySide6 import QtSql, QtWidgets
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 
 engine = create_engine('sqlite:///database.db', pool_pre_ping=True)
 Session = sessionmaker(bind=engine)
+metadata = MetaData()
 
 
 class Data:

@@ -42,7 +42,7 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="pages_">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="menu_tables_page">
        <widget class="QWidget" name="layoutWidget">
@@ -70,7 +70,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox">
+          <widget class="QComboBox" name="group_cb">
            <property name="placeholderText">
             <string>Добавить запись в группу</string>
            </property>
@@ -234,7 +234,7 @@
        </widget>
       </widget>
       <widget class="QWidget" name="menu_groups_page">
-       <widget class="QStackedWidget" name="stackedWidget">
+       <widget class="QStackedWidget" name="groups_pages">
         <property name="geometry">
          <rect>
           <x>0</x>
@@ -244,7 +244,7 @@
          </rect>
         </property>
         <property name="currentIndex">
-         <number>0</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="group_list_page">
          <widget class="QWidget" name="layoutWidget">
@@ -389,7 +389,7 @@
            </item>
           </layout>
          </widget>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="group_name">
           <property name="geometry">
            <rect>
             <x>10</x>
@@ -432,10 +432,10 @@
     <addaction name="grnti_action"/>
     <addaction name="vuz_action"/>
    </widget>
-   <widget class="QMenu" name="groups">
+   <widget class="QMenu" name="groups_menu">
     <property name="geometry">
      <rect>
-      <x>195</x>
+      <x>352</x>
       <y>125</y>
       <width>182</width>
       <height>72</height>
@@ -444,7 +444,7 @@
     <property name="title">
      <string>Группы</string>
     </property>
-    <addaction name="action"/>
+    <addaction name="show_list"/>
    </widget>
    <widget class="QMenu" name="help">
     <property name="title">
@@ -452,7 +452,7 @@
     </property>
    </widget>
    <addaction name="tables_menu"/>
-   <addaction name="groups"/>
+   <addaction name="groups_menu"/>
    <addaction name="help"/>
   </widget>
   <action name="vistavki_action">
@@ -475,7 +475,7 @@
     <string>Сводная таблица</string>
    </property>
   </action>
-  <action name="action">
+  <action name="show_list">
    <property name="text">
     <string>Список групп</string>
    </property>
