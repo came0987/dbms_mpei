@@ -439,17 +439,17 @@
     </item>
    </layout>
   </widget>
-  <widget class="QLabel" name="label_13">
+  <widget class="QLabel" name="vuz_short_name_err">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>100</y>
-     <width>49</width>
+     <width>211</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
   <widget class="QLabel" name="label_14">
@@ -457,103 +457,103 @@
     <rect>
      <x>240</x>
      <y>100</y>
-     <width>49</width>
+     <width>71</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_15">
+  <widget class="QLabel" name="vuz_name_err">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>170</y>
-     <width>49</width>
+     <width>281</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_16">
+  <widget class="QLabel" name="vuz_full_name_err">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>250</y>
-     <width>49</width>
+     <width>311</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_17">
+  <widget class="QLabel" name="federal_region_err">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>330</y>
-     <width>49</width>
+     <width>181</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_18">
+  <widget class="QLabel" name="city_err">
    <property name="geometry">
     <rect>
      <x>220</x>
      <y>330</y>
-     <width>49</width>
+     <width>221</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_19">
+  <widget class="QLabel" name="federal_subject_err">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>400</y>
-     <width>49</width>
+     <width>271</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_20">
+  <widget class="QLabel" name="federal_subject_code_err">
    <property name="geometry">
     <rect>
      <x>320</x>
      <y>400</y>
-     <width>49</width>
+     <width>111</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QLabel" name="label_21">
+  <widget class="QLabel" name="vuz_status_err">
    <property name="geometry">
     <rect>
      <x>20</x>
      <y>470</y>
-     <width>49</width>
+     <width>151</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
   <widget class="QLabel" name="label_22">
@@ -561,12 +561,12 @@
     <rect>
      <x>190</x>
      <y>470</y>
-     <width>49</width>
+     <width>81</width>
      <height>16</height>
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
   <widget class="QLabel" name="label_23">
@@ -579,7 +579,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>TextLabel</string>
+    <string/>
    </property>
   </widget>
  </widget>

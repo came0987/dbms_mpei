@@ -99,8 +99,8 @@ class VystMoBase(Base):
 
 class SvodBase(Base):
     __tablename__ = 'svod'
-    # id = Column(Integer, primary_key=True, autoincrement=True)
-    id = Column(Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    vyst_id = Column(Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'), primary_key=True)
     codvuz = Column(Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE'))
     z2 = Column(String)
     subject = Column(String)
@@ -140,11 +140,11 @@ class SvodBase(Base):
 
 @as_declarative()
 class DynamicTableBase(Base):
-    # __abstract__ = True
+    __abstract__ = True
 
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
+    # @declared_attr
+    # def __tablename__(cls):
+    #     return cls.__name__.lower()
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     vyst_id = Column(Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'))#, primary_key=True)
@@ -175,16 +175,16 @@ class DynamicTableBase(Base):
     gr_ved = Column(String)
     prof = Column(String)
 
-    # vyst_mo = relationship("VystMoBase", backref="svod", cascade="all, delete")
-    # vuz = relationship("VuzBase", backref="svod", cascade="all, delete")
+    vyst_mo = relationship("VystMoBase", backref="svod", cascade="all, delete")
+    vuz = relationship("VuzBase", backref="svod", cascade="all, delete")
 
-    @declared_attr
-    def vyst_mo(cls):
-        return relationship("VystMoBase", backref="dynamic_svod", cascade="all, delete")
-
-    @declared_attr
-    def vuz(cls):
-        return relationship("VuzBase", backref="dynamic_svod", cascade="all, delete")
+    # @declared_attr
+    # def vyst_mo(cls):
+    #     return relationship("VystMoBase", backref="dynamic_svod", cascade="all, delete")
+    #
+    # @declared_attr
+    # def vuz(cls):
+    #     return relationship("VuzBase", backref="dynamic_svod", cascade="all, delete")
 
 
 class GroupListBase(Base):

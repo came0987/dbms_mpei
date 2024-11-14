@@ -5,7 +5,7 @@ from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
                                QMessageBox, QDialog, QLineEdit)
-from PySide6.QtCore import QSortFilterProxyModel
+from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
 
@@ -24,7 +24,7 @@ from PySide6.QtCore import QRegularExpression, Qt
 class Regex:
     common_regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;\"\']+$")
     num_regex = QRegularExpression(r"^\d+$")
-    rus_regex = QRegularExpression(r"^[А-Яа-яЁё]+$")
+    rus_regex = QRegularExpression(r"^[А-Яа-яЁё\s\.\;\"\']+$")
     upper_rus_regex = QRegularExpression(r"^[А-ЯЁ]+$")
 
 
@@ -153,7 +153,7 @@ class ExponatDBMS(QMainWindow):
             db_table_name = session.query(GroupListBase.db_table_name).where(GroupListBase.ui_table_name==name).scalar()
             print(db_table_name)
             print("db_table_name:", db_table_name, type(db_table_name))
-            create_dynamic_table(db_table_name)
+            # create_dynamic_table(db_table_name)
 
             Data.create_connection()
 
@@ -226,6 +226,110 @@ class ExponatDBMS(QMainWindow):
         # Return True if any errors are found, otherwise False
         return error_found
 
+    def validate_vuz_fields(self):
+        # Retrieve the input values
+        vuz_short_name = self.ui_create_vuz_dialog.vuz_short_name.text()
+        vuz_name = self.ui_create_vuz_dialog.vuz_name.text()
+        vuz_full_name = self.ui_create_vuz_dialog.vuz_full_name.text()
+        city = self.ui_create_vuz_dialog.city.text()
+        vuz_status = self.ui_create_vuz_dialog.vuz_status.text()
+        federal_region = self.ui_create_vuz_dialog.federal_region_cb.currentText()
+        federal_subject = self.ui_create_vuz_dialog.federal_subject_cb.currentText()
+        federal_subject_code = self.ui_create_vuz_dialog.federal_subject_code_cb.currentText()
+
+        Data.close_connection()
+        with Session() as session:
+        # Извлекаем все записи из таблицы Vuz
+            vuz_records = session.query(VuzBase.z2).all()
+        Data.create_connection()
+        vuz_names_list = [row[0] for row in vuz_records]
+        print(vuz_names_list)
+        # Initialize a flag to track if any errors are found
+        error_found = False
+
+        # Validate codvuz by checking if it exists in the list of valid names
+        valid_vuz_names = vuz_names_list
+
+        if not vuz_short_name:
+            self.ui_create_vuz_dialog.vuz_short_name_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.vuz_short_name_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            if vuz_short_name in valid_vuz_names:
+                self.ui_create_vuz_dialog.vuz_short_name_err.setText("Такой ВУЗ уже существует")
+                self.ui_create_vuz_dialog.vuz_short_name_err.setStyleSheet("color: red;")
+                error_found = True
+            else:
+                self.ui_create_vuz_dialog.vuz_short_name_err.setText("")
+
+        # Validate grnti to ensure it contains only digits
+        # if not grnti.isdigit():
+        #     self.ui_create_vyst_dialog.grnti_error.setText("Неверный код")
+        #     self.ui_create_vyst_dialog.grnti_error.setStyleSheet("color: red;")
+        #     error_found = True
+        # else:
+        #     self.ui_create_vyst_dialog.grnti_error.setText("")
+
+        # if not vuz_short_name:
+        #     self.ui_create_vuz_dialog.vuz_short_name_err.setText("Заполните поле!")
+        #     self.ui_create_vuz_dialog.vuz_short_name_err.setStyleSheet("color: red;")
+        #     error_found = True
+        # else:
+        #     self.ui_create_vuz_dialog.vuz_short_name_err.setText("")
+
+        # Check if other required fields are filled
+        if not vuz_name:
+            self.ui_create_vuz_dialog.vuz_name_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.vuz_name_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vuz_dialog.vuz_name_err.setText("")
+
+        if not vuz_full_name:
+            self.ui_create_vuz_dialog.vuz_full_name_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.vuz_full_name_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vuz_dialog.vuz_full_name_err.setText("")
+
+        if not federal_region:
+            self.ui_create_vuz_dialog.federal_region_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.federal_region_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vuz_dialog.federal_region_err.setText("")
+
+        if not city:
+            self.ui_create_vuz_dialog.city_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.city_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vuz_dialog.city_err.setText("")
+
+        if not federal_subject:
+            self.ui_create_vuz_dialog.federal_subject_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.federal_subject_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vuz_dialog.federal_subject_err.setText("")
+
+        if not federal_subject_code:
+            self.ui_create_vuz_dialog.federal_subject_code_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.federal_subject_code_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vuz_dialog.federal_subject_code_err.setText("")
+
+        if not vuz_status:
+            self.ui_create_vuz_dialog.vuz_status_err.setText("Заполните поле!")
+            self.ui_create_vuz_dialog.vuz_status_err.setStyleSheet("color: red;")
+            error_found = True
+        else:
+            self.ui_create_vuz_dialog.vuz_status_err.setText("")
+
+        # Return True if any errors are found, otherwise False
+        return error_found
+
     def open_create_vyst_dialog(self):
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_vyst_dialog = Ui_add_zapis_dialog()
@@ -242,12 +346,16 @@ class ExponatDBMS(QMainWindow):
 
         self.ui_create_vyst_dialog.grnti.textChanged.connect(self.auto_insert_dots)
         # Разрешаем только буквы и пробелы
-        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.nir_ruk)
-        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_doljnost)
-        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_zvanie)
-        self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.ruk_stepen)
+        self.set_validation(Regex.rus_regex, self.ui_create_vyst_dialog.nir_ruk)
+        self.set_validation(Regex.rus_regex, self.ui_create_vyst_dialog.ruk_doljnost)
+        self.set_validation(Regex.rus_regex, self.ui_create_vyst_dialog.ruk_zvanie)
+        self.set_validation(Regex.rus_regex, self.ui_create_vyst_dialog.ruk_stepen)
         self.set_validation(Regex.num_regex, self.ui_create_vyst_dialog.grnti)
-
+        # self.set_validation(Regex.num_regex, self.ui_create_vyst_dialog.codvuz)
+        # self.set_validation(Regex.rus_regex, self.ui_create_vyst_dialog.vuz)
+        # self.set_validation(Regex.num_regex, self.ui_create_vyst_dialog.reg_number)
+        # self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.vistavka)
+        # self.set_validation(Regex.common_regex, self.ui_create_vyst_dialog.exponat_name)
 
         Data.close_connection()
         with Session() as session:
@@ -651,6 +759,54 @@ class ExponatDBMS(QMainWindow):
 
         self.apply_filters()
         self.new_dialog.close()
+        self.top_scroll_func()
+
+        QTimer.singleShot(150, lambda: self.scroll_to_bottom(self.ui.vyst_mo_table, self.vyst_mo_table_model))
+        # self.ui.vyst_mo_table.setFocus()
+        #
+        # row_count = self.vyst_mo_table_model.rowCount()
+        # if row_count == 0:
+        #     return  # Если таблица пуста, ничего не делаем
+        #
+        # # Определяем индекс последней строки
+        # last_row_index = self.vyst_mo_table_model.index(row_count - 1, 0)  # Первый столбец последней строки
+        #
+        # # Прокручиваем к последней строке
+        # self.ui.vyst_mo_table.scrollTo(last_row_index, QAbstractItemView.ScrollHint.PositionAtCenter)
+        #
+        # # Устанавливаем выделение для всей последней строки
+        # self.ui.vyst_mo_table.selectionModel().select(
+        #     last_row_index,
+        #     QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+        # )
+        #
+        # self.ui.vyst_mo_table.viewport().update()
+        # self.ui.vyst_mo_table.repaint()
+        #
+        # self.ui.vyst_mo_table.setFocus()
+
+    def scroll_to_bottom(self, table, model):
+        table.setFocus()
+
+        row_count = model.rowCount()
+        if row_count == 0:
+            return  # Если таблица пуста, ничего не делаем
+
+        # Определяем индекс последней строки
+        last_row_index = model.index(row_count - 1, 0)  # Первый столбец последней строки
+
+        # Прокручиваем к последней строке
+        table.scrollTo(last_row_index, QAbstractItemView.ScrollHint.PositionAtBottom)
+        table.selectRow(row_count - 1)
+
+        # Устанавливаем выделение для всей последней строки
+        table.selectionModel().select(
+            last_row_index,
+            QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+        )
+
+        table.setFocus()
+
 
     def open_delete_confirm_dialog(self, message):
         self.confirm_dialog = QDialog()
@@ -685,6 +841,7 @@ class ExponatDBMS(QMainWindow):
         self.top_scroll_func()
         self.confirm_dialog.close()
         self.top_scroll_func()
+
         # Закрываем диалог
 
     def init_tables(self):
@@ -1072,7 +1229,7 @@ class ExponatDBMS(QMainWindow):
 
         self.ui_create_vuz_dialog.federal_subject_cb.setEditable(True)
         self.ui_create_vuz_dialog.federal_subject_code_cb.setEditable(True)
-        self.ui_create_vuz_dialog.federal_region_cb.setEditable(True)
+        self.ui_create_vuz_dialog.federal_region_cb.setEditable(False)
         # self.ui_create_vuz_dialog.grnti.setValidator(QIntValidator(0, 99999999))
         # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
 
@@ -1086,6 +1243,8 @@ class ExponatDBMS(QMainWindow):
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_status)
         self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_category)
         self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_profile)
+        self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.federal_subject_cb.lineEdit())
+        self.set_validation(Regex.num_regex, self.ui_create_vuz_dialog.federal_subject_code_cb.lineEdit())
 
         # Data.close_connection()
         # with Session() as session:
@@ -1121,9 +1280,9 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_vuz_dialog.federal_subject_code_cb.lineEdit().editingFinished.connect(
             lambda elem = self.ui_create_vuz_dialog.federal_subject_code_cb: self.validate_cb_input(elem)
         )
-        self.ui_create_vuz_dialog.federal_region_cb.lineEdit().editingFinished.connect(
-            lambda elem=self.ui_create_vuz_dialog.federal_region_cb: self.validate_cb_input(elem)
-        )
+        # self.ui_create_vuz_dialog.federal_region_cb.lineEdit().editingFinished.connect(
+        #     lambda elem=self.ui_create_vuz_dialog.federal_region_cb: self.validate_cb_input(elem)
+        # )
 
         self.new_dialog.setFixedSize(468, 573)
         self.new_dialog.setModal(True)
@@ -1441,6 +1600,9 @@ class ExponatDBMS(QMainWindow):
         element.setToolTip(element.text())
 
     def create_vuz(self):
+        if self.validate_vuz_fields():
+            return
+
         short_name = self.ui_create_vuz_dialog.vuz_short_name.text()
         code = self.ui_create_vuz_dialog.vuz_code.text()
         name = self.ui_create_vuz_dialog.vuz_name.text()
@@ -1477,10 +1639,14 @@ class ExponatDBMS(QMainWindow):
 
         self.apply_filters()
         self.new_dialog.close()
+        self.top_scroll_func()
+        QTimer.singleShot(150, lambda: self.scroll_to_bottom(self.ui.vuz_table, self.vuz_table_model))
 
     def update_vuz(self):
         current_obj = self.current_obj
 
+        if self.validate_vuz_fields():
+            return
         short_name = self.ui_create_vuz_dialog.vuz_short_name.text()
         code = self.ui_create_vuz_dialog.vuz_code.text()
         name = self.ui_create_vuz_dialog.vuz_name.text()
