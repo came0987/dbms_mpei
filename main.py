@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBo
 from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
+from sqlalchemy import event
 
 from connection import Session, Data
 from create_db import create_db_and_tables
@@ -17,7 +18,7 @@ from py_ui.ui_create_vuz import Ui_create_vuz_dialog
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
-from table_models import VuzBase, VystMoBase, GrntiBase, GroupListBase, create_dynamic_table
+from table_models import VuzBase, VystMoBase, GrntiBase, GroupListBase, SvodBase  # , create_dynamic_table
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression, Qt
 
@@ -89,6 +90,7 @@ class ExponatDBMS(QMainWindow):
 
         self.ui.create_group_btn.clicked.connect(self.open_create_group_dialog)
         self.ui.delete_group_btn.clicked.connect(self.delete_button_action)
+        # self.
         # self.ui.group_list_table.doubleClicked.connect(self.open_group_table)
 
     # @Slot()
@@ -100,8 +102,6 @@ class ExponatDBMS(QMainWindow):
         # self.ui.group_name.setText(ui_table_name)
         # self.
         # self.ui.groups_pages.setCurrentIndex(1)
-
-
 
 
     def top_scroll_func(self):
@@ -706,6 +706,11 @@ class ExponatDBMS(QMainWindow):
         if self.vyst_mo_table_model.select():
             print("kaef")
 
+        if not self.svod_table_model.submitAll():
+            print("Ошибка добавления записи:", self.svod_table_model.lastError().text())
+        if self.svod_table_model.select():
+            print("kaef")
+
         self.apply_filters()
         self.new_dialog.close()
 
@@ -755,6 +760,11 @@ class ExponatDBMS(QMainWindow):
         if not self.vyst_mo_table_model.submitAll():
             print("Ошибка добавления записи:", self.vyst_mo_table_model.lastError().text())
         if self.vyst_mo_table_model.select():
+            print("kaef")
+
+        if not self.svod_table_model.submitAll():
+            print("Ошибка добавления записи:", self.svod_table_model.lastError().text())
+        if self.svod_table_model.select():
             print("kaef")
 
         self.apply_filters()
@@ -832,15 +842,16 @@ class ExponatDBMS(QMainWindow):
             selected_rows = current_table.selectionModel().selectedRows()
             for row in sorted(selected_rows, reverse=True):
                 model.removeRow(row.row()) # Удаляем строку
-            model.submitAll() # Применяем изменения
-            self.top_scroll_func()
-            model.select() # Обновляем данные в таблице
-            self.top_scroll_func()
+
+        if not model.submitAll():
+            print("Ошибка удаления записи:", model.lastError().text())
+        if model.select():
+            print("kaef")
 
         self.apply_filters()
-        self.top_scroll_func()
+        # self.top_scroll_func()
         self.confirm_dialog.close()
-        self.top_scroll_func()
+        # self.top_scroll_func()
 
         # Закрываем диалог
 
@@ -864,6 +875,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.group_list_table.setModel(self.group_list_table_model)
 
         self.ui.svod_table.hideColumn(0)
+        self.ui.svod_table.hideColumn(24)
         self.ui.vyst_mo_table.hideColumn(0)
         self.ui.grntirub_table.hideColumn(0)
         self.ui.vuz_table.hideColumn(0)
@@ -1687,6 +1699,11 @@ class ExponatDBMS(QMainWindow):
         if not self.vuz_table_model.submitAll():
             print("Ошибка добавления записи:", self.vuz_table_model.lastError().text())
         if self.vuz_table_model.select():
+            print("kaef")
+
+        if not self.svod_table_model.submitAll():
+            print("Ошибка добавления записи:", self.svod_table_model.lastError().text())
+        if self.svod_table_model.select():
             print("kaef")
 
         self.apply_filters()

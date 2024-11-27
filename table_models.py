@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedColumn,
 from sqlalchemy import and_
 
 from connection import Session, engine, metadata, Data
+# from main import ExponatDBMS
 
 
 class Base(DeclarativeBase):
@@ -100,7 +101,6 @@ class VystMoBase(Base):
 class SvodBase(Base):
     __tablename__ = 'svod'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    vyst_id = Column(Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'), primary_key=True)
     codvuz = Column(Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE'))
     z2 = Column(String)
     subject = Column(String)
@@ -108,7 +108,7 @@ class SvodBase(Base):
     rubrika = Column(String)  # Новый столбец для рубрики
     bossname = Column(String)
     regnumber = Column(Integer)
-    
+
     type = Column(String)
     boss_position = Column(String)
     boss_academic_rank = Column(String)
@@ -128,15 +128,122 @@ class SvodBase(Base):
     gr_ved = Column(String)
     prof = Column(String)
 
+    vyst_id = Column(Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'))
+
     # Устанавливаем связи
     vyst_mo = relationship("VystMoBase", backref="svod", cascade="all, delete")
-    # vyst_mo = relationship(
-    #     "VystMoBase",
-    #     primaryjoin="SvodBase.codvuz == VystMoBase.codvuz",
-    #     backref="svod",
-    #     cascade="all, delete"
-    # )
     vuz = relationship("VuzBase", backref="svod", cascade="all, delete")
+
+@event.listens_for(VystMoBase, "after_insert")
+def insert_svod_entry(mapper, connection, target):
+    """
+    Автоматически добавляет запись в svod при добавлении записи в vyst_mo.
+    """
+    # Получаем данные из таблицы VUZ
+    # Data.close_connection()
+
+    vuz_data = connection.execute(
+        VuzBase.__table__.select().where(VuzBase.codvuz == target.codvuz)
+    ).fetchone()
+
+    if vuz_data:
+        # Создаем запись в таблице Svod
+        connection.execute(
+            SvodBase.__table__.insert().values(
+                vyst_id=target.id,
+                codvuz=target.codvuz,
+                z2=vuz_data.z2,
+                subject=target.subject,
+                grnti=target.grnti,
+                rubrika=target.grnti,  # Здесь вы можете указать любое значение для рубрики
+                bossname=target.bossname,
+                regnumber=target.regnumber,
+                type=target.type,
+                boss_position=target.boss_position,
+                boss_academic_rank=target.boss_academic_rank,
+                boss_scientific_degree=target.boss_scientific_degree,
+                exhitype=target.exhitype,
+                vystavki=target.vystavki,
+                exponat=target.exponat,
+                # Поля из VUZ
+                z1=vuz_data.z1,
+                z1full=vuz_data.z1full,
+                region=vuz_data.region,
+                city=vuz_data.city,
+                status=vuz_data.status,
+                obl=vuz_data.obl,
+                oblname=vuz_data.oblname,
+                gr_ved=vuz_data.gr_ved,
+                prof=vuz_data.prof,
+            )
+        )
+
+@event.listens_for(VystMoBase, "after_update")
+def update_svod_from_vyst(mapper, connection, target):
+    """
+    Обновляет запись в таблице SvodBase при изменении данных в VystMoBase.
+    """
+    # Обновляем запись в таблице SvodBase
+    vuz_data = connection.execute(
+        VuzBase.__table__.select().where(VuzBase.codvuz == target.codvuz)
+    ).fetchone()
+
+    if vuz_data:
+        # Обновляем запись с учетом данных из VUZ
+        connection.execute(
+            SvodBase.__table__.update()
+            .where(SvodBase.vyst_id == target.id)
+            .values(
+                codvuz=target.codvuz,
+                subject=target.subject,
+                grnti=target.grnti,
+                rubrika=target.grnti,
+                bossname=target.bossname,
+                regnumber=target.regnumber,
+                type=target.type,
+                boss_position=target.boss_position,
+                boss_academic_rank=target.boss_academic_rank,
+                boss_scientific_degree=target.boss_scientific_degree,
+                exhitype=target.exhitype,
+                vystavki=target.vystavki,
+                exponat=target.exponat,
+                # Поля из VUZ
+                z1=vuz_data.z1,
+                z2=vuz_data.z2,
+                z1full=vuz_data.z1full,
+                region=vuz_data.region,
+                city=vuz_data.city,
+                status=vuz_data.status,
+                obl=vuz_data.obl,
+                oblname=vuz_data.oblname,
+                gr_ved=vuz_data.gr_ved,
+                prof=vuz_data.prof,
+            )
+        )
+
+@event.listens_for(VuzBase, "after_update")
+def update_svod_from_vuz(mapper, connection, target):
+    """
+    Обновляет записи в таблице SvodBase при изменении данных в таблице VuzBase.
+    """
+    # Обновляем записи в SvodBase, связанные через codvuz
+    connection.execute(
+        SvodBase.__table__.update()
+        .where(SvodBase.codvuz == target.codvuz)
+        .values(
+            # Поля, которые обновляем из VuzBase
+            z1=target.z1,
+            z1full=target.z1full,
+            region=target.region,
+            city=target.city,
+            status=target.status,
+            obl=target.obl,
+            oblname=target.oblname,
+            gr_ved=target.gr_ved,
+            prof=target.prof,
+            z2=target.z2,  # Если z2 нужно обновлять
+        )
+    )
 
 @as_declarative()
 class DynamicTableBase(Base):
@@ -203,125 +310,125 @@ def generate_uuid(mapper, connection, target):
 # Привязываем событие к добавлению новой записи
 event.listen(GroupListBase, 'before_insert', generate_uuid)
 
-def add_record_to_group_table(arg_list, bd_table_name: str):
-    Data.close_connection()
-    if bd_table_name in metadata.tables:
-        # Динамически создаем класс ORM для существующей таблицы
-        DynamicTableClass = type(bd_table_name, (DynamicTableBase,), {'__table__': metadata.tables[bd_table_name]})
-
-    new_entry = DynamicTableClass(
-    vyst_id = arg_list[0],
-    codvuz = arg_list[1],
-    z2 = arg_list[2],
-    subject = arg_list[3],
-    grnti = arg_list[4],
-    rubrika = arg_list[5],  # Новый столбец для рубрики
-    bossname = arg_list[6],
-    regnumber = arg_list[7],
-
-    type = arg_list[8],
-    boss_position = arg_list[9],
-    boss_academic_rank = arg_list[10],
-    boss_scientific_degree = arg_list[11],
-    exhitype = arg_list[12],
-    vystavki = arg_list[13],
-    exponat = arg_list[14],
-
-    # Поля из таблицы VUZ
-    z1 = arg_list[15],
-    z1full = arg_list[16],
-    region = arg_list[17],
-    city = arg_list[18],
-    status = arg_list[19],
-    obl = arg_list[20],
-    oblname = arg_list[21],
-    gr_ved = arg_list[22],
-    prof = arg_list[23],
-    )
-
-    with Session() as session:
-        try:
-            session.add(new_entry)
-        except:
-            session.rollback()
-            raise
-        else:
-            session.commit()
-
-    update_table_list(bd_table_name)
-
-    Data.create_connection()
-
-def get_dynamic_table(bd_table_name: str):
-    if bd_table_name in metadata.tables:
-        # Динамически создаем класс ORM для существующей таблицы
-        DynamicTableClass: Table = type(bd_table_name, (DynamicTableBase,), {'__table__': metadata.tables[bd_table_name]})
-        return DynamicTableClass
-    return None
-
-def update_table_list(bd_table_name: str):
-    Data.close_connection()
-    with Session as session:
-        table = get_dynamic_table(bd_table_name)
-
-        # Запрос уникальных значений столбцов и количества строк
-        query = select([
-            func.group_concat(func.distinct(table.c.region)).label('unique_fed_regions'),
-            func.group_concat(func.distinct(table.c.grnti)).label('unique_grnti'),
-            func.count().label('record_count')
-        ])
-        result = session.execute(query).fetchone()
-
-        # Ищем или создаем запись в `table_list`
-        table_list_entry = session.query(GroupListBase).filter_by(table_name=bd_table_name).first()
-        # if not table_list_entry:
-        #     table_list_entry = GroupListBase(table_name=bd_table_name)
-        #     session.add(table_list_entry)
-
-        # Обновляем значения в `table_list`
-        table_list_entry.unique_names = result['unique_names']
-        table_list_entry.unique_city = result['unique_city']
-        table_list_entry.count = result['count']
-        session.commit()
-    Data.create_connection()
-
-def create_dynamic_table(table_name):
-    new_table = Table(
-        table_name, metadata,
-        Column('id', Integer, primary_key=True, autoincrement=True),
-    # Column('id', Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'), primary_key=True),
-    # Column('codvuz', Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE')),
-    Column('z2', String),
-    Column('subject', String),
-    Column('grnti', String),
-    Column('rubrika', String), # Новый столбец для рубрики
-    Column('bossname', String),
-    Column('regnumber', Integer),
-
-    Column('type', String),
-    Column('boss_position', String),
-    Column('boss_academic_rank',String),
-    Column('boss_scientific_degree', String),
-    Column('exhitype', String),
-    Column('vystavki', String),
-    Column('exponat', String),
-
-    # Поля из таблицы VUZ
-     Column('z1', String),
-     Column('z1full', String),
-     Column('region', String),
-     Column('city', String),
-     Column('status', String),
-     Column('obl', String),
-     Column('oblname', String),
-     Column('gr_ved', String),
-     Column('prof', String),
-)
-    metadata.create_all(engine)
-
-    inherit_condition = DynamicTableBase.__table__.c.id == new_table.c.id
-    if table_name in Base.metadata.tables:
-        DynamicTable = Base.metadata.tables[table_name]
-    else:
-        DynamicTable = type(table_name, (DynamicTableBase,), {'__table__': new_table, '__mapper_args__': {'inherit_condition': inherit_condition}})
-    return DynamicTable
+# def add_record_to_group_table(arg_list, bd_table_name: str):
+#     Data.close_connection()
+#     if bd_table_name in metadata.tables:
+#         # Динамически создаем класс ORM для существующей таблицы
+#         DynamicTableClass = type(bd_table_name, (DynamicTableBase,), {'__table__': metadata.tables[bd_table_name]})
+#
+#     new_entry = DynamicTableClass(
+#     vyst_id = arg_list[0],
+#     codvuz = arg_list[1],
+#     z2 = arg_list[2],
+#     subject = arg_list[3],
+#     grnti = arg_list[4],
+#     rubrika = arg_list[5],  # Новый столбец для рубрики
+#     bossname = arg_list[6],
+#     regnumber = arg_list[7],
+#
+#     type = arg_list[8],
+#     boss_position = arg_list[9],
+#     boss_academic_rank = arg_list[10],
+#     boss_scientific_degree = arg_list[11],
+#     exhitype = arg_list[12],
+#     vystavki = arg_list[13],
+#     exponat = arg_list[14],
+#
+#     # Поля из таблицы VUZ
+#     z1 = arg_list[15],
+#     z1full = arg_list[16],
+#     region = arg_list[17],
+#     city = arg_list[18],
+#     status = arg_list[19],
+#     obl = arg_list[20],
+#     oblname = arg_list[21],
+#     gr_ved = arg_list[22],
+#     prof = arg_list[23],
+#     )
+#
+#     with Session() as session:
+#         try:
+#             session.add(new_entry)
+#         except:
+#             session.rollback()
+#             raise
+#         else:
+#             session.commit()
+#
+#     update_table_list(bd_table_name)
+#
+#     Data.create_connection()
+#
+# def get_dynamic_table(bd_table_name: str):
+#     if bd_table_name in metadata.tables:
+#         # Динамически создаем класс ORM для существующей таблицы
+#         DynamicTableClass: Table = type(bd_table_name, (DynamicTableBase,), {'__table__': metadata.tables[bd_table_name]})
+#         return DynamicTableClass
+#     return None
+#
+# def update_table_list(bd_table_name: str):
+#     Data.close_connection()
+#     with Session as session:
+#         table = get_dynamic_table(bd_table_name)
+#
+#         # Запрос уникальных значений столбцов и количества строк
+#         query = select([
+#             func.group_concat(func.distinct(table.c.region)).label('unique_fed_regions'),
+#             func.group_concat(func.distinct(table.c.grnti)).label('unique_grnti'),
+#             func.count().label('record_count')
+#         ])
+#         result = session.execute(query).fetchone()
+#
+#         # Ищем или создаем запись в `table_list`
+#         table_list_entry = session.query(GroupListBase).filter_by(table_name=bd_table_name).first()
+#         # if not table_list_entry:
+#         #     table_list_entry = GroupListBase(table_name=bd_table_name)
+#         #     session.add(table_list_entry)
+#
+#         # Обновляем значения в `table_list`
+#         table_list_entry.unique_names = result['unique_names']
+#         table_list_entry.unique_city = result['unique_city']
+#         table_list_entry.count = result['count']
+#         session.commit()
+#     Data.create_connection()
+#
+# def create_dynamic_table(table_name):
+#     new_table = Table(
+#         table_name, metadata,
+#         Column('id', Integer, primary_key=True, autoincrement=True),
+#     # Column('id', Integer, ForeignKey('vyst_mo.id', ondelete='CASCADE'), primary_key=True),
+#     # Column('codvuz', Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE')),
+#     Column('z2', String),
+#     Column('subject', String),
+#     Column('grnti', String),
+#     Column('rubrika', String), # Новый столбец для рубрики
+#     Column('bossname', String),
+#     Column('regnumber', Integer),
+#
+#     Column('type', String),
+#     Column('boss_position', String),
+#     Column('boss_academic_rank',String),
+#     Column('boss_scientific_degree', String),
+#     Column('exhitype', String),
+#     Column('vystavki', String),
+#     Column('exponat', String),
+#
+#     # Поля из таблицы VUZ
+#      Column('z1', String),
+#      Column('z1full', String),
+#      Column('region', String),
+#      Column('city', String),
+#      Column('status', String),
+#      Column('obl', String),
+#      Column('oblname', String),
+#      Column('gr_ved', String),
+#      Column('prof', String),
+# )
+#     metadata.create_all(engine)
+#
+#     inherit_condition = DynamicTableBase.__table__.c.id == new_table.c.id
+#     if table_name in Base.metadata.tables:
+#         DynamicTable = Base.metadata.tables[table_name]
+#     else:
+#         DynamicTable = type(table_name, (DynamicTableBase,), {'__table__': new_table, '__mapper_args__': {'inherit_condition': inherit_condition}})
+#     return DynamicTable

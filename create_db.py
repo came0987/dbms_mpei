@@ -62,7 +62,7 @@ def populate_svod():
 
             # Создаем запись в SVOD
             new_svod = SvodBase(
-                id=vyst.id,  # Связываем записи по id
+                vyst_id=vyst.id,  # Связываем записи по id
                 codvuz=vyst.codvuz,
                 # id=vyst.id,  # Связываем записи по id
                 z2=vuz.z2,
