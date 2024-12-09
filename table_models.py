@@ -103,7 +103,7 @@ class VystMoBase(Base):
 class SvodBase(Base):
     __tablename__ = 'svod'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    codvuz = Column(Integer, ForeignKey('vuz.codvuz', onupdate='CASCADE'))
+    codvuz = Column(Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE', onupdate='CASCADE'))
     z2 = Column(String)
     subject = Column(String)
     grnti = Column(String)

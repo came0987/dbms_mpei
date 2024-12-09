@@ -20,7 +20,7 @@ from py_ui.ui_create_vuz import Ui_create_vuz_dialog
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
-from table_models import VuzBase, VystMoBase, GrntiBase
+from table_models import VuzBase, VystMoBase, GrntiBase, GroupListBase
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression, Qt
 
