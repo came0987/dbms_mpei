@@ -53,7 +53,7 @@ class VuzBase(Base):
     gr_ved: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     prof: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
-    vysts = relationship("VystMoBase", back_populates="vuz", cascade="all, delete")
+    # vysts = relationship("VystMoBase", back_populates="vuz", cascade="all")
 
     @classmethod
     def get_by_name(cls, codvuz: str):
@@ -75,7 +75,8 @@ class VystMoBase(Base):
     __tablename__ = 'vyst_mo'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    codvuz: Mapped[int] = mapped_column(ForeignKey("vuz.codvuz", ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    codvuz: Mapped[int] = mapped_column(Integer, nullable=False)
+    # codvuz: Mapped[int] = mapped_column(ForeignKey("vuz.codvuz", ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     type: Mapped[str] = mapped_column(String(5))
     regnumber: Mapped[str] = mapped_column(String(30), nullable=False)
     subject: Mapped[str] = mapped_column(String(150), nullable=False)
@@ -88,7 +89,7 @@ class VystMoBase(Base):
     vystavki: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     exponat: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
-    vuz = relationship("VuzBase", back_populates="vysts", cascade='all')
+    # vuz = relationship("VuzBase", back_populates="vysts", cascade='all')
     svod = relationship("SvodBase", back_populates="vyst", cascade='all')
 
     @classmethod
@@ -102,7 +103,7 @@ class VystMoBase(Base):
 class SvodBase(Base):
     __tablename__ = 'svod'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    codvuz = Column(Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE', onupdate='CASCADE'))
+    codvuz = Column(Integer, ForeignKey('vuz.codvuz', onupdate='CASCADE'))
     z2 = Column(String)
     subject = Column(String)
     grnti = Column(String)
@@ -134,7 +135,7 @@ class SvodBase(Base):
     # Устанавливаем связи
     vyst = relationship("VystMoBase", back_populates="svod")
     # vyst_mo = relationship("VystMoBase", backref="svod", cascade="all")
-    vuz = relationship("VuzBase", backref="svod", cascade="all")
+    vuz = relationship("VuzBase", backref="svod")
 
 @event.listens_for(VystMoBase, "after_insert")
 def insert_svod_entry(mapper, connection, target):
@@ -310,21 +311,21 @@ class DynamicTableBase(Base):
         return relationship("VuzBase", backref="dynamic_svod", cascade="all, delete")
 
 
-# class GroupListBase(Base):
-#     __tablename__ = 'grouplist'
-#
-#     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-#     unique_fed_regions = Column(String)
-#     unique_grnti = Column(String)
-#     record_count = Column(Integer)
-#     ui_table_name = Column(String)
-#     db_table_name = Column(String, unique=True)
-#
-# def generate_uuid(mapper, connection, target):
-#     target.db_table_name = f"table_{uuid.uuid4()}"
-#
-# # Привязываем событие к добавлению новой записи
-# event.listen(GroupListBase, 'before_insert', generate_uuid)
+class GroupListBase(Base):
+    __tablename__ = 'grouplist'
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    unique_fed_regions = Column(String)
+    unique_grnti = Column(String)
+    record_count = Column(Integer)
+    ui_table_name = Column(String)
+    db_table_name = Column(String, unique=True)
+
+def generate_uuid(mapper, connection, target):
+    target.db_table_name = f"table_{uuid.uuid4()}"
+
+# Привязываем событие к добавлению новой записи
+event.listen(GroupListBase, 'before_insert', generate_uuid)
 #
 # # def add_record_to_group_table(arg_list, bd_table_name: str):
 # #     Data.close_connection()
@@ -496,48 +497,48 @@ class DynamicTableBase(Base):
 #     )
 #     return DynamicTable
 
-def create_dynamic_table(table_name):
-    # Проверяем, существует ли таблица в метаданных
-    if table_name not in metadata.tables:
-        # Создаем новую таблицу, если она отсутствует
-        new_table = Table(
-            table_name, metadata,
-            Column('id', Integer, primary_key=True, autoincrement=True),
-            Column('z2', String),
-            Column('subject', String),
-            Column('grnti', String),
-            Column('rubrika', String),  # Новый столбец для рубрики
-            Column('bossname', String),
-            Column('regnumber', Integer),
-            Column('type', String),
-            Column('boss_position', String),
-            Column('boss_academic_rank', String),
-            Column('boss_scientific_degree', String),
-            Column('exhitype', String),
-            Column('vystavki', String),
-            Column('exponat', String),
-            Column('z1', String),
-            Column('z1full', String),
-            Column('region', String),
-            Column('city', String),
-            Column('status', String),
-            Column('obl', String),
-            Column('oblname', String),
-            Column('gr_ved', String),
-            Column('prof', String),
-        )
-        metadata.create_all(engine)
-    else:
-        # Если таблица уже существует, используем ее
-        new_table = metadata.tables[table_name]
-
-    # Динамически создаем класс ORM для таблицы без использования базового класса
-    DynamicTable = type(
-        table_name,
-        (Base,),  # Наследуем только от Base, исключая столбцы DynamicTableBase
-        {
-            '__table__': new_table,
-        }
-    )
-    return DynamicTable
+# def create_dynamic_table(table_name):
+#     # Проверяем, существует ли таблица в метаданных
+#     if table_name not in metadata.tables:
+#         # Создаем новую таблицу, если она отсутствует
+#         new_table = Table(
+#             table_name, metadata,
+#             Column('id', Integer, primary_key=True, autoincrement=True),
+#             Column('z2', String),
+#             Column('subject', String),
+#             Column('grnti', String),
+#             Column('rubrika', String),  # Новый столбец для рубрики
+#             Column('bossname', String),
+#             Column('regnumber', Integer),
+#             Column('type', String),
+#             Column('boss_position', String),
+#             Column('boss_academic_rank', String),
+#             Column('boss_scientific_degree', String),
+#             Column('exhitype', String),
+#             Column('vystavki', String),
+#             Column('exponat', String),
+#             Column('z1', String),
+#             Column('z1full', String),
+#             Column('region', String),
+#             Column('city', String),
+#             Column('status', String),
+#             Column('obl', String),
+#             Column('oblname', String),
+#             Column('gr_ved', String),
+#             Column('prof', String),
+#         )
+#         metadata.create_all(engine)
+#     else:
+#         # Если таблица уже существует, используем ее
+#         new_table = metadata.tables[table_name]
+#
+#     # Динамически создаем класс ORM для таблицы без использования базового класса
+#     DynamicTable = type(
+#         table_name,
+#         (Base,),  # Наследуем только от Base, исключая столбцы DynamicTableBase
+#         {
+#             '__table__': new_table,
+#         }
+#     )
+#     return DynamicTable
 
