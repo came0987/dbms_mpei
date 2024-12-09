@@ -1,4 +1,6 @@
 import sys
+import os
+from pathlib import Path
 
 import PySide6
 from PySide6.QtGui import QFontMetrics
@@ -8,6 +10,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBo
 from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
+from sqlalchemy import event
 
 from connection import Session, Data
 from create_db import create_db_and_tables
@@ -17,7 +20,7 @@ from py_ui.ui_create_vuz import Ui_create_vuz_dialog
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
-from table_models import VuzBase, VystMoBase, GrntiBase, GroupListBase, create_dynamic_table
+from table_models import VuzBase, VystMoBase, GrntiBase
 from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression, Qt
 
@@ -89,6 +92,7 @@ class ExponatDBMS(QMainWindow):
 
         self.ui.create_group_btn.clicked.connect(self.open_create_group_dialog)
         self.ui.delete_group_btn.clicked.connect(self.delete_button_action)
+        # self.
         # self.ui.group_list_table.doubleClicked.connect(self.open_group_table)
 
     # @Slot()
@@ -100,8 +104,6 @@ class ExponatDBMS(QMainWindow):
         # self.ui.group_name.setText(ui_table_name)
         # self.
         # self.ui.groups_pages.setCurrentIndex(1)
-
-
 
 
     def top_scroll_func(self):
@@ -153,7 +155,7 @@ class ExponatDBMS(QMainWindow):
             db_table_name = session.query(GroupListBase.db_table_name).where(GroupListBase.ui_table_name==name).scalar()
             print(db_table_name)
             print("db_table_name:", db_table_name, type(db_table_name))
-            # create_dynamic_table(db_table_name)
+            create_dynamic_table(db_table_name)
 
             Data.create_connection()
 
@@ -706,6 +708,11 @@ class ExponatDBMS(QMainWindow):
         if self.vyst_mo_table_model.select():
             print("kaef")
 
+        if not self.svod_table_model.submitAll():
+            print("Ошибка добавления записи:", self.svod_table_model.lastError().text())
+        if self.svod_table_model.select():
+            print("kaef")
+
         self.apply_filters()
         self.new_dialog.close()
 
@@ -755,6 +762,11 @@ class ExponatDBMS(QMainWindow):
         if not self.vyst_mo_table_model.submitAll():
             print("Ошибка добавления записи:", self.vyst_mo_table_model.lastError().text())
         if self.vyst_mo_table_model.select():
+            print("kaef")
+
+        if not self.svod_table_model.submitAll():
+            print("Ошибка добавления записи:", self.svod_table_model.lastError().text())
+        if self.svod_table_model.select():
             print("kaef")
 
         self.apply_filters()
@@ -832,15 +844,11 @@ class ExponatDBMS(QMainWindow):
             selected_rows = current_table.selectionModel().selectedRows()
             for row in sorted(selected_rows, reverse=True):
                 model.removeRow(row.row()) # Удаляем строку
-            model.submitAll() # Применяем изменения
-            self.top_scroll_func()
-            model.select() # Обновляем данные в таблице
-            self.top_scroll_func()
 
         self.apply_filters()
-        self.top_scroll_func()
+        self.update_all_tables(model)
         self.confirm_dialog.close()
-        self.top_scroll_func()
+
 
         # Закрываем диалог
 
@@ -864,9 +872,10 @@ class ExponatDBMS(QMainWindow):
         self.ui.group_list_table.setModel(self.group_list_table_model)
 
         self.ui.svod_table.hideColumn(0)
+        self.ui.svod_table.hideColumn(24)
         self.ui.vyst_mo_table.hideColumn(0)
         self.ui.grntirub_table.hideColumn(0)
-        self.ui.vuz_table.hideColumn(0)
+        # self.ui.vuz_table.hideColumn(0)
         self.ui.group_list_table.hideColumn(0)
 
         # Отключаем сортировку по заголовкам при первом выводе
@@ -888,14 +897,14 @@ class ExponatDBMS(QMainWindow):
                                  "Федеральный округ", 'Город', "Статус", "Код субъекта", "Субъект РФ", "Категория", "Профиль"])
 
         self.set_custom_headers(self.grntirub_table_model, ["Код рубрики", "Наименование рубрики"])
-        self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Сокр. наименование ВУЗа",
-                                                        "Наименование НИР", "Код ГРНТИ", "Рубрика ГРНТИ", "Руководитель НИР",
-                                                        "Должность", "Ученое звание", "Ученая степень",
-                                                        "Рег. номер НИР", "Выставки", "Выставочный экспонат",
-                                                        "Признак  формы НИР", "Признак", "Название ВУЗа",
+        self.set_custom_headers(self.svod_table_model, ["Код ВУЗа", "Сокращенное наименование ВУЗа",
+                                                        "Наименование НИР", "Код  ГРНТИ", "Рубрика ГРНТИ", "Руководитель НИР",
+                                                        "Регистрационный номер НИР", "Признак  формы НИР", "Должность",
+                                                        "Ученое звание", "Ученая степень", "Признак",
+                                                        "Выставки", "Выставочный экспонат", "Название ВУЗа",
                                                         "Полное наименование ВУЗа",
-                                                        "Федеральный округ", 'Город', "Статус", "Код субъекта", "Субъект РФ",
-                                                        "Категория", "Профиль"
+                                                        "Федеральный округ", 'Город', "Статус", "Номер области",
+                                                        "Область", "Категория", "Профиль"
                                                         ])
 
         self.ui.vyst_mo_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -981,6 +990,8 @@ class ExponatDBMS(QMainWindow):
             self.ui.group_cb.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
 
+            self.ui.create_btn.clicked.disconnect()
+            self.ui.update_btn.clicked.disconnect()
             self.ui.create_btn.clicked.connect(self.open_create_vyst_dialog)
             self.ui.update_btn.clicked.connect(
                 lambda: self.update_button_action(func=self.open_update_vyst_dialog)
@@ -995,6 +1006,8 @@ class ExponatDBMS(QMainWindow):
             self.ui.group_cb.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
 
+            self.ui.create_btn.clicked.disconnect()
+            self.ui.update_btn.clicked.disconnect()
             self.ui.create_btn.clicked.connect(self.open_create_vuz_dialog)
             self.ui.update_btn.clicked.connect(
                 lambda: self.update_button_action(func=self.open_update_vuz_dialog)
@@ -1289,188 +1302,9 @@ class ExponatDBMS(QMainWindow):
         self.new_dialog.show()
 
     def open_update_vuz_dialog(self, model, selected_row):
-        subj_list = ["",
-                     "Республика Адыгея",
-                     "Республика Башкортостан",
-                     "Республика Бурятия",
-                     "Республика Алтай",
-                     "Республика Дагестан",
-                     "Республика Ингушетия",
-                     "Кабардино-Балкарская Республика",
-                     "Республика Калмыкия",
-                     "Карачаево-Черкесская Республика",
-                     "Республика Карелия",
-                     "Республика Коми",
-                     "Республика Марий Эл",
-                     "Республика Мордовия",
-                     "Республика Саха (Якутия)",
-                     "Республика Северная Осетия - Алания",
-                     "Республика Татарстан (Татарстан)",
-                     "Республика Тыва",
-                     "Удмуртская Республика",
-                     "Республика Хакасия",
-                     "Чеченская Республика",
-                     "Чувашская Республика - Чувашия",
-                     "Алтайский край",
-                     "Краснодарский край",
-                     "Красноярский край",
-                     "Приморский край",
-                     "Ставропольский край",
-                     "Хабаровский край",
-                     "Амурская область",
-                     "Архангельская область",
-                     "Астраханская область",
-                     "Белгородская область",
-                     "Брянская область",
-                     "Владимирская область",
-                     "Волгоградская область",
-                     "Вологодская область",
-                     "Воронежская область",
-                     "Ивановская область",
-                     "Иркутская область",
-                     "Калининградская область",
-                     "Калужская область",
-                     "Камчатский край",
-                     "Кемеровская область",
-                     "Кировская область",
-                     "Костромская область",
-                     "Курганская область",
-                     "Курская область",
-                     "Ленинградская область",
-                     "Липецкая область",
-                     "Магаданская область",
-                     "Московская область",
-                     "Мурманская область",
-                     "Нижегородская область",
-                     "Новгородская область",
-                     "Новосибирская область",
-                     "Омская область",
-                     "Оренбургская область",
-                     "Орловская область",
-                     "Пензенская область",
-                     "Пермский край",
-                     "Псковская область",
-                     "Ростовская область",
-                     "Рязанская область",
-                     "Самарская область",
-                     "Саратовская область",
-                     "Сахалинская область",
-                     "Свердловская область",
-                     "Смоленская область",
-                     "Тамбовская область",
-                     "Тверская область",
-                     "Томская область",
-                     "Тульская область",
-                     "Тюменская область",
-                     "Ульяновская область",
-                     "Челябинская область",
-                     "Забайкальский край",
-                     "Ярославская область",
-                     "г. Москва",
-                     "г. Санкт-Петербург",
-                     "Еврейская автономная область",
-                     "Ненецкий автономный округ",
-                     "Ханты-Мансийский АО - Югра",
-                     "Чукотский автономный округ",
-                     "Ямало-Ненецкий автономный округ",
-                     "Республика Крым",
-                     "г. Севастополь",
-                     "Запорожская область",
-                     "Донецкая Народная Республика",
-                     "Луганская Народная Республика",
-                     "Херсонская область"]
-        codes_list = ["",
-                      "01",
-                      "02",
-                      "03",
-                      "04",
-                      "05",
-                      "06",
-                      "07",
-                      "08",
-                      "09",
-                      "10",
-                      "11",
-                      "12",
-                      "13",
-                      "14",
-                      "15",
-                      "16",
-                      "17",
-                      "18",
-                      "19",
-                      "20",
-                      "21",
-                      "22",
-                      "23",
-                      "24",
-                      "25",
-                      "26",
-                      "27",
-                      "28",
-                      "29",
-                      "30",
-                      "31",
-                      "32",
-                      "33",
-                      "34",
-                      "35",
-                      "36",
-                      "37",
-                      "38",
-                      "39",
-                      "40",
-                      "41",
-                      "42",
-                      "43",
-                      "44",
-                      "45",
-                      "46",
-                      "47",
-                      "48",
-                      "49",
-                      "50",
-                      "51",
-                      "52",
-                      "53",
-                      "54",
-                      "55",
-                      "56",
-                      "57",
-                      "58",
-                      "59",
-                      "60",
-                      "61",
-                      "62",
-                      "63",
-                      "64",
-                      "65",
-                      "66",
-                      "67",
-                      "68",
-                      "69",
-                      "70",
-                      "71",
-                      "72",
-                      "73",
-                      "74",
-                      "75",
-                      "76",
-                      "77",
-                      "78",
-                      "79",
-                      "83",
-                      "86",
-                      "87",
-                      "89",
-                      "91",
-                      "92",
-                      "90",
-                      "93",
-                      "94",
-                      "95"]
-        federal_regions = ["", "Центральный", "Северо-Западный", "Южный", "Приволжский", "Уральский", "Сибирский",
-                           "Дальневосточный", "Северо-Кавказский"]
+        subj_list = [w for w in Path("federal_obj.txt").read_text(encoding="utf-8").replace("\n", " ").split()]
+        codes_list = [w for w in Path("region_codes.txt").read_text(encoding="utf-8").replace("\n", " ").split()]
+        federal_regions = [w for w in Path("federal_regions.txt").read_text(encoding="utf-8").replace("\n", " ").split()]
 
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_vuz_dialog = Ui_create_vuz_dialog()
@@ -1484,7 +1318,6 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_vuz_dialog.vuz_full_name.editingFinished.connect(
             lambda: self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
         )
-
         self.ui_create_vuz_dialog.vuz_name.textChanged.connect(
             lambda: self.add_tooltip(self.ui_create_vuz_dialog.vuz_full_name)
         )
@@ -1492,9 +1325,9 @@ class ExponatDBMS(QMainWindow):
             lambda: self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
         )
 
-        self.ui_create_vuz_dialog.federal_subject_cb.addItems(subj_list)
-        self.ui_create_vuz_dialog.federal_subject_code_cb.addItems(codes_list)
-        self.ui_create_vuz_dialog.federal_region_cb.addItems(federal_regions)
+        self.ui_create_vuz_dialog.federal_subject_cb.addItem("").addItems(subj_list)
+        self.ui_create_vuz_dialog.federal_subject_code_cb.addItem("").addItems(codes_list)
+        self.ui_create_vuz_dialog.federal_region_cb.addItem("").addItems(federal_regions)
 
         self.ui_create_vuz_dialog.federal_subject_cb.currentIndexChanged.connect(self.sync_federal_code_combo)
         self.ui_create_vuz_dialog.federal_subject_code_cb.currentIndexChanged.connect(self.sync_federal_name_combo)
@@ -1556,23 +1389,23 @@ class ExponatDBMS(QMainWindow):
 
         row_data = self.get_selected_row_data(model, selected_row)
 
-        self.ui_create_vuz_dialog.vuz_code.setText(str(row_data[1]))
-        self.ui_create_vuz_dialog.vuz_name.setText(row_data[2])
-        self.ui_create_vuz_dialog.vuz_full_name.setText(row_data[3])
-        self.ui_create_vuz_dialog.vuz_short_name.setText(row_data[4])
-        self.ui_create_vuz_dialog.federal_region_cb.setCurrentText(row_data[5])
-        self.ui_create_vuz_dialog.city.setText(row_data[6])
-        self.ui_create_vuz_dialog.vuz_status.setText(row_data[7])
-        self.ui_create_vuz_dialog.federal_subject_code_cb.setCurrentText(str(row_data[8]))
-        self.ui_create_vuz_dialog.federal_subject_cb.setCurrentText(row_data[9])
-        self.ui_create_vuz_dialog.vuz_category.setText(row_data[10])
-        self.ui_create_vuz_dialog.vuz_profile.setText(row_data[11])
+        self.ui_create_vuz_dialog.vuz_code.setText(str(row_data[0]))
+        self.ui_create_vuz_dialog.vuz_name.setText(row_data[1])
+        self.ui_create_vuz_dialog.vuz_full_name.setText(row_data[2])
+        self.ui_create_vuz_dialog.vuz_short_name.setText(row_data[3])
+        self.ui_create_vuz_dialog.federal_region_cb.setCurrentText(row_data[4])
+        self.ui_create_vuz_dialog.city.setText(row_data[5])
+        self.ui_create_vuz_dialog.vuz_status.setText(row_data[6])
+        self.ui_create_vuz_dialog.federal_subject_code_cb.setCurrentText(str(row_data[7]))
+        self.ui_create_vuz_dialog.federal_subject_cb.setCurrentText(row_data[8])
+        self.ui_create_vuz_dialog.vuz_category.setText(row_data[9])
+        self.ui_create_vuz_dialog.vuz_profile.setText(row_data[10])
 
         self.ui_create_vuz_dialog.vuz_full_name.setCursorPosition(0)
         self.ui_create_vuz_dialog.vuz_name.setCursorPosition(0)
 
         Data.close_connection()
-        current_obj = VuzBase.get_by_name(row_data[1])
+        current_obj = VuzBase.get_by_name(row_data[0])
         Data.create_connection()
 
         self.current_obj = current_obj
@@ -1647,6 +1480,7 @@ class ExponatDBMS(QMainWindow):
 
         if self.validate_vuz_fields():
             return
+
         short_name = self.ui_create_vuz_dialog.vuz_short_name.text()
         code = self.ui_create_vuz_dialog.vuz_code.text()
         name = self.ui_create_vuz_dialog.vuz_name.text()
@@ -1687,6 +1521,11 @@ class ExponatDBMS(QMainWindow):
         if not self.vuz_table_model.submitAll():
             print("Ошибка добавления записи:", self.vuz_table_model.lastError().text())
         if self.vuz_table_model.select():
+            print("kaef")
+
+        if not self.svod_table_model.submitAll():
+            print("Ошибка добавления записи:", self.svod_table_model.lastError().text())
+        if self.svod_table_model.select():
             print("kaef")
 
         self.apply_filters()
@@ -1914,10 +1753,13 @@ class ExponatDBMS(QMainWindow):
                 headers.remove(filter_key)
             self.ui.add_filters_cb.addItems(headers)
 
-    @staticmethod
-    def set_custom_headers(model, headers):
-        for index, header in enumerate(headers):
-            model.setHeaderData(index + 1, Qt.Orientation.Horizontal, header)
+    def set_custom_headers(self, model, headers):
+        if model is self.vuz_table_model:
+            for index, header in enumerate(headers):
+                model.setHeaderData(index, Qt.Orientation.Horizontal, header)
+        else:
+            for index, header in enumerate(headers):
+                model.setHeaderData(index + 1, Qt.Orientation.Horizontal, header)
 
     def clear_filter_input_fields(self):
         """Clears all filter input fields when switching tables."""
@@ -1964,6 +1806,28 @@ class ExponatDBMS(QMainWindow):
             model.setSort(-1, Qt.SortOrder.AscendingOrder)  # Сбрасываем сортировку
             model.select()  # Перезагружаем данные в исходном порядке
             self.sort_states[table_name][logicalIndex] = None
+
+    def update_all_tables(self, model):
+        if not model.submitAll():
+            print("model error:", model.lastError().text())
+        if model.select():
+            print("kaef - model")
+
+        if not self.vuz_table_model.submitAll():
+            print("vuz error:", self.vuz_table_model.lastError().text())
+        if self.vuz_table_model.select():
+            print("kaef - vuz")
+
+        if not self.vyst_mo_table_model.submitAll():
+            print("vyst_mo error:", self.vyst_mo_table_model.lastError().text())
+        if self.vyst_mo_table_model.select():
+            print("kaef - vyst")
+
+        if not self.svod_table_model.submitAll():
+            print("svod error:", self.svod_table_model.lastError().text())
+        if self.svod_table_model.select():
+            print("kaef - svod")
+
 
     def delete_button_action(self):
         current_widget = self.ui.db_tables.currentWidget() # Получаем текущий виджет

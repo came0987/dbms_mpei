@@ -20,6 +20,12 @@ class Data:
                                                "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
                 return False
             Data.db_connection = db
+
+            query = QtSql.QSqlQuery(db)
+            if not query.exec("PRAGMA foreign_keys = ON;"):
+                print(f"Failed to enable foreign key support: {query.lastError().text()}")
+                return False
+
         return True
 
     @staticmethod

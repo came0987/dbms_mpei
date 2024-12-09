@@ -1,7 +1,7 @@
 import pandas as pd
 
 from connection import Session, engine
-from table_models import Base, GrntiBase, VuzBase, VystMoBase, SvodBase, GroupListBase
+from table_models import Base, GrntiBase, VuzBase, VystMoBase, SvodBase#, GroupListBase
 
 
 # """
@@ -62,7 +62,7 @@ def populate_svod():
 
             # Создаем запись в SVOD
             new_svod = SvodBase(
-                id=vyst.id,  # Связываем записи по id
+                vyst_id=vyst.id,  # Связываем записи по id
                 codvuz=vyst.codvuz,
                 # id=vyst.id,  # Связываем записи по id
                 z2=vuz.z2,
@@ -101,5 +101,5 @@ def populate_svod():
 
 if __name__ == '__main__':
     create_db_and_tables()
-    # populate_svod()
-    # fill_tables_from_excel()
+    fill_tables_from_excel()
+    populate_svod()
