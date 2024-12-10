@@ -4,7 +4,7 @@ from typing import Optional
 from sqlalchemy import Integer, String, ForeignKey, CHAR, select, Column, Table, table, func, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedColumn, InstrumentedAttribute, relationship, \
     as_declarative, declared_attr
-from sqlalchemy import and_
+from sqlalchemy import and_, update, null
 
 from connection import Session, engine, metadata, Data
 # from main import ExponatDBMS
@@ -64,7 +64,7 @@ class VuzBase(Base):
 
 
 class GrntiBase(Base):
-    __tablename__ = 'grnti'
+    __tablename__ = 'grntirub'
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     codrub: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
@@ -102,14 +102,14 @@ class VystMoBase(Base):
 
 class SvodBase(Base):
     __tablename__ = 'svod'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    codvuz = Column(Integer, ForeignKey('vuz.codvuz', ondelete='CASCADE', onupdate='CASCADE'))
+    # id = Column(Integer, primary_key=True, autoincrement=True)
+    codvuz = Column(Integer, primary_key=True)#, ForeignKey('vuz.codvuz', ondelete='CASCADE', onupdate='CASCADE'))
     z2 = Column(String)
     subject = Column(String)
     grnti = Column(String)
     rubrika = Column(String)  # Новый столбец для рубрики
     bossname = Column(String)
-    regnumber = Column(Integer)
+    regnumber = Column(Integer, primary_key=True)
 
     type = Column(String)
     boss_position = Column(String)
@@ -134,8 +134,15 @@ class SvodBase(Base):
 
     # Устанавливаем связи
     vyst = relationship("VystMoBase", back_populates="svod")
-    # vyst_mo = relationship("VystMoBase", backref="svod", cascade="all")
-    vuz = relationship("VuzBase", backref="svod")
+
+    # vuz = relationship("VuzBase", backref="svod")
+
+    @classmethod
+    def get_by_name_2(cls, codvuz: str, regnumber: str):
+        with Session() as session:
+            statement = select(cls).where(and_(cls.codvuz == codvuz, cls.regnumber == regnumber))
+            db_object = session.scalars(statement).one()
+        return db_object
 
 @event.listens_for(VystMoBase, "after_insert")
 def insert_svod_entry(mapper, connection, target):
@@ -261,6 +268,32 @@ def update_svod_from_vuz(mapper, connection, target):
             z2=target.z2,  # Если z2 нужно обновлять
         )
     )
+
+@event.listens_for(VuzBase, "after_delete")
+def clear_svod_data_on_vuz_delete(mapper, connection, target):
+    """
+    Очищает информацию о записи из таблицы VUZ в таблице SVOD,
+    оставляя значение в столбце codvuz.
+    """
+    # Очищаем все столбцы из VUZ в связанной таблице SVOD
+    print(f"Deleting related data for VUZ codvuz={target.codvuz}")
+    connection.execute(
+        SvodBase.__table__.update()
+        .where(SvodBase.codvuz == target.codvuz)
+        .values(
+            z1=null(),
+            z1full=null(),
+            z2=null(),
+            region=null(),
+            city=null(),
+            status=null(),
+            obl=null(),
+            oblname=null(),
+            gr_ved=null(),
+            prof=null()
+        )
+    )
+
 
 @as_declarative()
 class DynamicTableBase(Base):

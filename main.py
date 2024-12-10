@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBo
 from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer
 from PySide6.QtWidgets import QHeaderView, QTableView
 from PySide6.QtSql import QSqlTableModel
-from sqlalchemy import event
+from sqlalchemy import event, delete
 
 from connection import Session, Data
 from create_db import create_db_and_tables
@@ -835,15 +835,33 @@ class ExponatDBMS(QMainWindow):
         self.confirm_dialog.setModal(True)
 
     def delete_record(self):
-    # Получаем текущий виджет QTableView
         current_table = self.ui.db_tables.currentWidget().children()[1]
 
         if isinstance(current_table, QTableView):
-            model = current_table.model() # Получаем модель таблицы
-      # Удаляем строки в обратном порядке, чтобы индексы не смещались
+            model = current_table.model()
             selected_rows = current_table.selectionModel().selectedRows()
-            for row in sorted(selected_rows, reverse=True):
-                model.removeRow(row.row()) # Удаляем строку
+
+            if model is self.vuz_table_model:
+                rows_list = [
+                    model.data(model.index(index.row(), 0))
+                    for index in selected_rows
+                ]
+                Data.close_connection()
+                with Session() as session:
+                    try:
+                        for codvuz in rows_list:
+                            vuz_record = session.query(VuzBase).filter_by(codvuz=codvuz).first()
+                            if vuz_record:
+                                session.delete(vuz_record)
+                        session.commit()
+                    except Exception as e:
+                        QMessageBox.critical(self, "Ошибка", f"Не удалось удалить записи: {e}")
+                        session.rollback()
+                        return
+                Data.create_connection()
+            else:
+                for row in sorted(selected_rows, reverse=True):
+                    model.removeRow(row.row())
 
         self.apply_filters()
         self.update_all_tables(model)
@@ -871,8 +889,8 @@ class ExponatDBMS(QMainWindow):
         self.ui.svod_table.setModel(self.svod_table_model)
         self.ui.group_list_table.setModel(self.group_list_table_model)
 
-        self.ui.svod_table.hideColumn(0)
-        self.ui.svod_table.hideColumn(24)
+        # self.ui.svod_table.hideColumn(0)
+        self.ui.svod_table.hideColumn(23)
         self.ui.vyst_mo_table.hideColumn(0)
         self.ui.grntirub_table.hideColumn(0)
         # self.ui.vuz_table.hideColumn(0)
@@ -1032,187 +1050,12 @@ class ExponatDBMS(QMainWindow):
         self.show_all_rows()
 
     def open_create_vuz_dialog(self):
-        subj_list = ["",
-"Республика Адыгея",
-"Республика Башкортостан",
-"Республика Бурятия",
-"Республика Алтай",
-"Республика Дагестан",
-"Республика Ингушетия",
-"Кабардино-Балкарская Республика",
-"Республика Калмыкия",
-"Карачаево-Черкесская Республика",
-"Республика Карелия",
-"Республика Коми",
-"Республика Марий Эл",
-"Республика Мордовия",
-"Республика Саха (Якутия)",
-"Республика Северная Осетия - Алания",
-"Республика Татарстан (Татарстан)",
-"Республика Тыва",
-"Удмуртская Республика",
-"Республика Хакасия",
-"Чеченская Республика",
-"Чувашская Республика - Чувашия",
-"Алтайский край",
-"Краснодарский край",
-"Красноярский край",
-"Приморский край",
-"Ставропольский край",
-"Хабаровский край",
-"Амурская область",
-"Архангельская область",
-"Астраханская область",
-"Белгородская область",
-"Брянская область",
-"Владимирская область",
-"Волгоградская область",
-"Вологодская область",
-"Воронежская область",
-"Ивановская область",
-"Иркутская область",
-"Калининградская область",
-"Калужская область",
-"Камчатский край",
-"Кемеровская область",
-"Кировская область",
-"Костромская область",
-"Курганская область",
-"Курская область",
-"Ленинградская область",
-"Липецкая область",
-"Магаданская область",
-"Московская область",
-"Мурманская область",
-"Нижегородская область",
-"Новгородская область",
-"Новосибирская область",
-"Омская область",
-"Оренбургская область",
-"Орловская область",
-"Пензенская область",
-"Пермский край",
-"Псковская область",
-"Ростовская область",
-"Рязанская область",
-"Самарская область",
-"Саратовская область",
-"Сахалинская область",
-"Свердловская область",
-"Смоленская область",
-"Тамбовская область",
-"Тверская область",
-"Томская область",
-"Тульская область",
-"Тюменская область",
-"Ульяновская область",
-"Челябинская область",
-"Забайкальский край",
-"Ярославская область",
-"г. Москва",
-"г. Санкт-Петербург",
-"Еврейская автономная область",
-"Ненецкий автономный округ",
-"Ханты-Мансийский АО - Югра",
-"Чукотский автономный округ",
-"Ямало-Ненецкий автономный округ",
-"Республика Крым",
-"г. Севастополь",
-"Запорожская область",
-"Донецкая Народная Республика",
-"Луганская Народная Республика",
-"Херсонская область"]
-        codes_list = ["",
-            "01",
-"02",
-"03",
-"04",
-"05",
-"06",
-"07",
-"08",
-"09",
-"10",
-"11",
-"12",
-"13",
-"14",
-"15",
-"16",
-"17",
-"18",
-"19",
-"20",
-"21",
-"22",
-"23",
-"24",
-"25",
-"26",
-"27",
-"28",
-"29",
-"30",
-"31",
-"32",
-"33",
-"34",
-"35",
-"36",
-"37",
-"38",
-"39",
-"40",
-"41",
-"42",
-"43",
-"44",
-"45",
-"46",
-"47",
-"48",
-"49",
-"50",
-"51",
-"52",
-"53",
-"54",
-"55",
-"56",
-"57",
-"58",
-"59",
-"60",
-"61",
-"62",
-"63",
-"64",
-"65",
-"66",
-"67",
-"68",
-"69",
-"70",
-"71",
-"72",
-"73",
-"74",
-"75",
-"76",
-"77",
-"78",
-"79",
-"83",
-"86",
-"87",
-"89",
-"91",
-"92",
-"90",
-"93",
-"94",
-"95"]
-        federal_regions = ["", "Центральный", "Северо-Западный", "Южный", "Приволжский", "Уральский", "Сибирский", "Дальневосточный", "Северо-Кавказский"]
+        with open('federal_obj.txt', 'r') as f:
+            subj_list = f.readlines()
+        with open('region_codes.txt', 'r') as f:
+            codes_list = f.readlines()
+        with open('federal_regions.txt', 'r') as f:
+            federal_regions = f.readlines()
 
         self.new_dialog = PySide6.QtWidgets.QDialog()
         self.ui_create_vuz_dialog = Ui_create_vuz_dialog()
@@ -1754,7 +1597,7 @@ class ExponatDBMS(QMainWindow):
             self.ui.add_filters_cb.addItems(headers)
 
     def set_custom_headers(self, model, headers):
-        if model is self.vuz_table_model:
+        if model is self.vuz_table_model or self.svod_table_model:
             for index, header in enumerate(headers):
                 model.setHeaderData(index, Qt.Orientation.Horizontal, header)
         else:
