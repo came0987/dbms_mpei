@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBo
                                QMessageBox, QDialog, QLineEdit, QHeaderView, QTableView)
 from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer, QRegularExpression, Qt, QCoreApplication
 from PySide6.QtSql import QSqlTableModel
-from sqlalchemy import tuple_
+from sqlalchemy import tuple_, and_, or_
 
 from connection import Session, Data
 from create_db import create_db_and_tables
@@ -90,7 +90,7 @@ class ExponatDBMS(QMainWindow):
         self.show_all_rows()
 
         self.ui.create_group_btn.clicked.connect(self.open_create_group_dialog)
-        self.ui.delete_group_btn.clicked.connect(self.delete_button_action)
+        self.ui.delete_group_btn.clicked.connect(self.delete_group_button_action)
         self.ui.add_to_group_btn.clicked.connect(self.open_add_to_group_dialog)
         self.ui.back_to_group_list_page_btn.clicked.connect(self.open_group_list)
         # self.ui.group_list_table.doubleClicked.connect(self.open_group_table)
@@ -111,8 +111,21 @@ class ExponatDBMS(QMainWindow):
         self.ui.group_name.setText(
             f"Группа '{self.group_list_table_model.data(self.group_list_table_model.index(row, 1))}'")
         if self.group_list_table_model.data(self.group_list_table_model.index(row, 5)): #false if str is null
-            pass #TODO тут типа функция отправляет запрос на создание VIEW где берет записи из SVOD по составному ключу из колонки последней. Ключи так выглядят 1:31B;12:32; и тд
+            records_composite_keys = self.group_list_table_model.data(
+                self.group_list_table_model.index(row, 4))  # 4 - индекс столбца `records_composite_keys`
 
+            if records_composite_keys:
+                # Парсим составные ключи
+                composite_keys = [key.split(":") for key in records_composite_keys.split(";")]
+                filters = [and_(SvodBase.codvuz == int(key[0]), SvodBase.regnumber == key[1]) for key in composite_keys]
+
+                Data.close_connection()
+                with Session() as session:
+                    svod_records = session.query(SvodBase).filter(or_(*filters)).all()
+                Data.create_connection()
+
+                # Создаем QSqlTableModel для отображения результата
+                self.show_svod_view(svod_records)
 
     def open_add_to_group_dialog(self):
         selected_ids = self.get_selected_rows(self.ui.svod_table)
@@ -133,6 +146,16 @@ class ExponatDBMS(QMainWindow):
         self.add_to_group_dialog.setModal(True)
         self.add_to_group_dialog.show()
 
+    # @staticmethod
+    # def get_selected_rows(table: QTableView):
+    #     selection_model = table.selectionModel()
+    #     if not selection_model.hasSelection():
+    #         return []
+    #
+    #     selected_indexes = selection_model.selectedRows()
+    #     selected_ids = [index.data() for index in selected_indexes]
+    #     return selected_ids
+
     @staticmethod
     def get_selected_rows(table: QTableView):
         selection_model = table.selectionModel()
@@ -140,19 +163,35 @@ class ExponatDBMS(QMainWindow):
             return []
 
         selected_indexes = selection_model.selectedRows()
-        selected_ids = [index.data() for index in selected_indexes]
-        return selected_ids
+        selected_keys = []
+        for index in selected_indexes:
+            codvuz = index.sibling(index.row(), 0).data()
+            regnumber = index.sibling(index.row(), 6).data()
+            if codvuz is not None and regnumber is not None:
+                selected_keys.append((codvuz, regnumber))
+        return selected_keys
 
     def create_group_list_record(self):
         selected_keys = self.get_selected_rows(self.ui.svod_table)
         current_ui_table_name = self.ui_add_to_group_dialog.groups_list_cb.currentText()
+        print(current_ui_table_name)
         try:
             Data.close_connection()
             with Session() as session:
                 # Получение выбранных записей из таблицы Svod
-                selected_records = session.query(SvodBase).filter(
-                    tuple_(SvodBase.codvuz, SvodBase.regnumber).in_(selected_keys)
-                ).all()
+                # selected_records = session.query(SvodBase).filter(
+                #     tuple_(SvodBase.codvuz, SvodBase.regnumber).in_(selected_keys)
+                # ).all()
+                # selected_records = session.query(SvodBase).filter(
+                #     or_(
+                #         and_(SvodBase.codvuz == key[0], SvodBase.regnumber == key[1])
+                #         for key in selected_keys
+                #     )
+                # ).all()
+                conditions = [and_(SvodBase.codvuz == key[0], SvodBase.regnumber == key[1]) for key in selected_keys]
+
+                # Получение выбранных записей из таблицы Svod
+                selected_records = session.query(SvodBase).filter(or_(*conditions)).all()
             Data.create_connection()
 
             # Уникальные регионы
@@ -183,7 +222,15 @@ class ExponatDBMS(QMainWindow):
 
                 session.commit()
             Data.create_connection()
+            if not self.group_list_table_model.submitAll():
+                print("Ошибка добавления записи:", self.group_list_table_model.lastError().text())
+            if self.group_list_table_model.select():
+                print("kaef")
+            self.apply_filters()
+            self.top_scroll_func()
+
             QMessageBox.information(self, "Успех", "Данные успешно добавлены в GroupList.")
+
 
         except Exception as e:
             Data.close_connection()
@@ -949,6 +996,37 @@ class ExponatDBMS(QMainWindow):
         self.confirm_dialog.exec_()
         self.confirm_dialog.setModal(True)
 
+
+    def open_delete_group_confirm_dialog(self, message):
+        self.confirm_dialog = QDialog()
+        self.ui_confirm_dialog = Ui_Dialog()
+        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+        self.ui_confirm_dialog.label.setText(message)
+
+    # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(self.delete_group_record)
+
+    # Подключаем кнопку "Cancel" для закрытия диалога
+        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+        self.confirm_dialog.exec_()
+        self.confirm_dialog.setModal(True)
+
+
+    def delete_group_record(self):
+        current_table = self.ui.group_list_table
+
+        if isinstance(current_table, QTableView):
+            model = current_table.model()
+            selected_rows = current_table.selectionModel().selectedRows()
+
+            for row in sorted(selected_rows, reverse=True):
+                model.removeRow(row.row())
+
+        self.apply_filters()
+        self.update_all_tables(model)
+        self.confirm_dialog.close()
+
+
     def delete_record(self):
         current_table = self.ui.db_tables.currentWidget().children()[1]
 
@@ -1007,9 +1085,9 @@ class ExponatDBMS(QMainWindow):
         self.ui.vyst_mo_table.hideColumn(0)
         # self.ui.grntirub_table.hideColumn(0)
         # self.ui.vuz_table.hideColumn(0)
-        self.ui.group_list_table.hideColumn(0)
-        self.ui.group_list_table.hideColumn(5)
-        self.ui.group_list_table.hideColumn(6)
+        # self.ui.group_list_table.hideColumn(0)
+        self.ui.group_list_table.hideColumn(4)
+        # self.ui.group_list_table.hideColumn(6)
 
         # Отключаем сортировку по заголовкам при первом выводе
         self.ui.vyst_mo_table.setSortingEnabled(False)
@@ -1689,7 +1767,7 @@ class ExponatDBMS(QMainWindow):
             self.ui.add_filters_cb.addItems(headers)
 
     def set_custom_headers(self, model, headers):
-        if model is self.vuz_table_model or model is self.svod_table_model:
+        if model is self.vuz_table_model or model is self.svod_table_model or model is self.group_list_table_model:
             for index, header in enumerate(headers):
                 model.setHeaderData(index, Qt.Orientation.Horizontal, header)
         else:
@@ -1763,8 +1841,28 @@ class ExponatDBMS(QMainWindow):
         if self.svod_table_model.select():
             print("kaef - svod")
 
+    def delete_group_button_action(self):
+        current_table: QTableView = self.ui.group_list_table
+
+        if isinstance(current_table, QTableView):
+            selected_rows = current_table.selectionModel().selectedRows()
+
+            if selected_rows:
+                # Получаем номера выбранных строк
+                row_numbers = [row.row() + 1 for row in selected_rows]
+
+                # Формируем текст для диалогового окна
+                message = self.format_row_numbers(row_numbers)
+
+                # Открываем диалог подтверждения
+                self.open_delete_group_confirm_dialog(message)
+            else:
+                QMessageBox.warning(self, "Ошибка", "Выберите строки в таблице.")
+        else:
+            QMessageBox.warning(self, "Ошибка", "Текущий виджет не является таблицей.")
 
     def delete_button_action(self):
+
         current_widget = self.ui.db_tables.currentWidget() # Получаем текущий виджет
         if current_widget is not None: # Проверяем, что текущий виджет существует
             current_table: QTableView = current_widget.children()[1] # Получаем второй дочерний элемент

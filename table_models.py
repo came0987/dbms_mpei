@@ -298,12 +298,12 @@ def clear_svod_data_on_vuz_delete(mapper, connection, target):
 class GroupListBase(Base):
     __tablename__ = 'grouplist'
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    ui_table_name = Column(String)
+    # id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    ui_table_name = Column(String, primary_key=True)
     unique_regions = Column(String)
     unique_grnti = Column(String)
     record_count = Column(Integer)
-    db_view_name = Column(String, unique=True)
+    # db_view_name = Column(String, unique=True)
     records_composite_keys = Column(String)
 
 # def generate_uuid(mapper, connection, target):

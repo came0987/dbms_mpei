@@ -61,7 +61,7 @@ class FilterComboBox(QComboBox):
 
         # Подключаем фильтрацию
         # self.lineEdit().textEdited.connect(self.filter_items)
-        self.lineEdit().editingFinished.connect(self.validate_text)
+        # self.lineEdit().editingFinished.connect(self.validate_text)
 
         self.add_items()
 
