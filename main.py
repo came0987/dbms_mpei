@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBo
                                QMessageBox, QDialog, QLineEdit, QHeaderView, QTableView)
 from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer, QRegularExpression, Qt, QCoreApplication
 from PySide6.QtSql import QSqlTableModel
+from sqlalchemy import tuple_
 
 from connection import Session, Data
 from create_db import create_db_and_tables
@@ -143,12 +144,18 @@ class ExponatDBMS(QMainWindow):
         return selected_ids
 
     def create_group_list_record(self):
-        selected_ids = self.get_selected_rows()
-
+        selected_keys = self.get_selected_rows(self.ui.svod_table)
+        current_ui_table_name = self.ui_add_to_group_dialog.groups_list_cb.currentText()
         try:
-            # Получение выбранных записей из таблицы Svod
-            selected_records = self.session.query(SvodBase).filter(SvodBase.id.in_(selected_ids)).all()
+            Data.close_connection()
+            with Session() as session:
+                # Получение выбранных записей из таблицы Svod
+                selected_records = session.query(SvodBase).filter(
+                    tuple_(SvodBase.codvuz, SvodBase.regnumber).in_(selected_keys)
+                ).all()
+            Data.create_connection()
 
+            # Уникальные регионы
             # Уникальные регионы
             unique_regions = ";".join(sorted(set(record.region for record in selected_records if record.region)))
 
@@ -166,21 +173,26 @@ class ExponatDBMS(QMainWindow):
             records_composite_keys = ";".join(f"{record.codvuz}:{record.regnumber}" for record in selected_records if
                                               record.codvuz and record.regnumber)
 
-            # Добавление записи в GroupList
-            new_record = GroupList(
-                unique_regions=unique_regions,
-                unique_grnti=unique_grnti,
-                record_count=record_count,
-                records_composite_keys=records_composite_keys
-            )
+            Data.close_connection()
+            with Session() as session:
+                group_record = session.query(GroupListBase).filter_by(ui_table_name=current_ui_table_name).first()
+                group_record.unique_regions = unique_regions
+                group_record.unique_grnti = unique_grnti
+                group_record.record_count = record_count
+                group_record.records_composite_keys = records_composite_keys
 
-            self.session.add(new_record)
-            self.session.commit()
-
+                session.commit()
+            Data.create_connection()
             QMessageBox.information(self, "Успех", "Данные успешно добавлены в GroupList.")
+
         except Exception as e:
-            self.session.rollback()
+            Data.close_connection()
+            with Session() as session:
+                session.rollback()
+            Data.create_connection()
             QMessageBox.critical(self, "Ошибка", f"Произошла ошибка: {str(e)}")
+
+
 
     def setup_group_cb(self):
         font = QFont()
