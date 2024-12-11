@@ -70,11 +70,10 @@ class Ui_MainWindow(object):
 
         self.crud_menu.addWidget(self.update_btn)
 
-        self.group_cb = QComboBox(self.layoutWidget)
-        self.group_cb.addItem("")
-        self.group_cb.setObjectName(u"group_cb")
+        self.add_to_group_btn = QPushButton(self.layoutWidget)
+        self.add_to_group_btn.setObjectName(u"add_to_group_btn")
 
-        self.crud_menu.addWidget(self.group_cb)
+        self.crud_menu.addWidget(self.add_to_group_btn)
 
         self.delete_btn = QPushButton(self.layoutWidget)
         self.delete_btn.setObjectName(u"delete_btn")
@@ -215,16 +214,10 @@ class Ui_MainWindow(object):
         self.export_btn.setFont(font2)
         self.layoutWidget3 = QWidget(self.group_view_page)
         self.layoutWidget3.setObjectName(u"layoutWidget3")
-        self.layoutWidget3.setGeometry(QRect(10, 30, 431, 51))
+        self.layoutWidget3.setGeometry(QRect(10, 30, 311, 51))
         self.horizontalLayout_2 = QHBoxLayout(self.layoutWidget3)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.add_record_btn = QPushButton(self.layoutWidget3)
-        self.add_record_btn.setObjectName(u"add_record_btn")
-        self.add_record_btn.setFont(font2)
-
-        self.horizontalLayout_2.addWidget(self.add_record_btn)
-
         self.delete_record_btn_2 = QPushButton(self.layoutWidget3)
         self.delete_record_btn_2.setObjectName(u"delete_record_btn_2")
         self.delete_record_btn_2.setFont(font2)
@@ -241,6 +234,10 @@ class Ui_MainWindow(object):
         self.group_name.setObjectName(u"group_name")
         self.group_name.setGeometry(QRect(10, 0, 201, 31))
         self.group_name.setFont(font1)
+        self.back_to_group_list_page_btn = QPushButton(self.group_view_page)
+        self.back_to_group_list_page_btn.setObjectName(u"back_to_group_list_page_btn")
+        self.back_to_group_list_page_btn.setGeometry(QRect(940, 40, 121, 31))
+        self.back_to_group_list_page_btn.setFont(font)
         self.groups_pages.addWidget(self.group_view_page)
         self.pages_.addWidget(self.menu_groups_page)
 
@@ -287,9 +284,7 @@ class Ui_MainWindow(object):
         self.show_list.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043f\u0438\u0441\u043e\u043a \u0433\u0440\u0443\u043f\u043f", None))
         self.create_btn.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.update_btn.setText(QCoreApplication.translate("MainWindow", u"\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
-        self.group_cb.setItemText(0, QCoreApplication.translate("MainWindow", u"+ \u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0433\u0440\u0443\u043f\u043f\u0443", None))
-
-        self.group_cb.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c \u0432 \u0433\u0440\u0443\u043f\u043f\u0443", None))
+        self.add_to_group_btn.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0432 \u0433\u0440\u0443\u043f\u043f\u0443", None))
         self.delete_btn.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.add_filters_cb.setPlaceholderText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0444\u0438\u043b\u044c\u0442\u0440", None))
         self.delete_all_filters.setText(QCoreApplication.translate("MainWindow", u"\u0421\u0431\u0440\u043e\u0441\u0438\u0442\u044c \u0432\u0441\u0435 \u0444\u0438\u043b\u044c\u0442\u0440\u044b", None))
@@ -298,10 +293,10 @@ class Ui_MainWindow(object):
         self.delete_group_btn.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043f\u0438\u0441\u043e\u043a \u0433\u0440\u0443\u043f\u043f", None))
         self.export_btn.setText(QCoreApplication.translate("MainWindow", u"\u041f\u0435\u0447\u0430\u0442\u044c", None))
-        self.add_record_btn.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.delete_record_btn_2.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c", None))
         self.delete_group_btn_2.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0433\u0440\u0443\u043f\u043f\u0443", None))
         self.group_name.setText(QCoreApplication.translate("MainWindow", u"\u0413\u0440\u0443\u043f\u043f\u0430 <\u0438\u043c\u044f \u0433\u0440\u0443\u043f\u043f\u044b>", None))
+        self.back_to_group_list_page_btn.setText(QCoreApplication.translate("MainWindow", u"\u0421\u043f\u0438\u0441\u043e\u043a \u0433\u0440\u0443\u043f\u043f", None))
         self.tables_menu.setTitle(QCoreApplication.translate("MainWindow", u"\u0422\u0430\u0431\u043b\u0438\u0446\u044b", None))
         self.groups_menu.setTitle(QCoreApplication.translate("MainWindow", u"\u0413\u0440\u0443\u043f\u043f\u044b", None))
         self.help.setTitle(QCoreApplication.translate("MainWindow", u"\u041f\u043e\u043c\u043e\u0449\u044c", None))

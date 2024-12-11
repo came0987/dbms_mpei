@@ -1,28 +1,24 @@
 import sys
-import os
 from pathlib import Path
 
-import PySide6
-from PySide6.QtGui import QFontMetrics
+from PySide6.QtGui import QFontMetrics, QIntValidator, QRegularExpressionValidator, QFont, QStandardItemModel
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
-                               QMessageBox, QDialog, QLineEdit)
-from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer
-from PySide6.QtWidgets import QHeaderView, QTableView
+                               QMessageBox, QDialog, QLineEdit, QHeaderView, QTableView)
+from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer, QRegularExpression, Qt, QCoreApplication
 from PySide6.QtSql import QSqlTableModel
-from sqlalchemy import event, delete
 
 from connection import Session, Data
 from create_db import create_db_and_tables
+from py_ui.add_to_group_dialog import Ui_add_to_group_dialog
+from searchable_cb import SearchableComboBox, FilterComboBox
+from table_models import VuzBase, VystMoBase, GrntiBase, GroupListBase, SvodBase
+
 from py_ui.ui_create_group import Ui_create_group_dialog
 from py_ui.ui_create_vuz import Ui_create_vuz_dialog
-
 from py_ui.ui_main_side import Ui_MainWindow
 from py_ui.ui_vistavka_entry import Ui_add_zapis_dialog
 from py_ui.ui_cancel_confirm import Ui_Dialog
-from table_models import VuzBase, VystMoBase, GrntiBase, GroupListBase
-from PySide6.QtGui import QIntValidator, QRegularExpressionValidator
-from PySide6.QtCore import QRegularExpression, Qt
 
 class Regex:
     common_regex = QRegularExpression(r"^[a-zA-Zа-яА-ЯёЁ\s\.\;\"\']+$")
@@ -47,11 +43,13 @@ class ExponatDBMS(QMainWindow):
         self.filter_input_layout = QGridLayout()  # Layout for the filter input field
         self.ui.toplevel_layout.addLayout(self.filter_input_layout)  # Добавляем его в главный макет
 
+        # self.setup_group_cb() # TODO удалить это если не нужно
+
         self.init_tables()
         self.setFixedSize(1200, 751)
 
         self.ui.tables_menu.triggered.connect(self.set_current_table)
-        self.ui.groups_menu.triggered.connect(lambda: self.ui.pages_.setCurrentIndex(1) if self.ui.pages_.currentIndex()!=1 else ...)
+        self.ui.groups_menu.triggered.connect(self.open_group_list)
 
         # Хранение состояния сортировки для каждой таблицы
         self.sort_states = {
@@ -84,7 +82,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.current_table_label.setText("Сводная таблица")
         self.ui.create_btn.setEnabled(False)
         self.ui.update_btn.setEnabled(False)
-        self.ui.group_cb.setEnabled(True)
+        self.ui.add_to_group_btn.setEnabled(True)
         self.ui.delete_btn.setEnabled(False)
         self.clear_filter_input_fields()
         self.update_filter_combobox()
@@ -92,7 +90,8 @@ class ExponatDBMS(QMainWindow):
 
         self.ui.create_group_btn.clicked.connect(self.open_create_group_dialog)
         self.ui.delete_group_btn.clicked.connect(self.delete_button_action)
-        # self.
+        self.ui.add_to_group_btn.clicked.connect(self.open_add_to_group_dialog)
+        self.ui.back_to_group_list_page_btn.clicked.connect(self.open_group_list)
         # self.ui.group_list_table.doubleClicked.connect(self.open_group_table)
 
     # @Slot()
@@ -105,6 +104,106 @@ class ExponatDBMS(QMainWindow):
         # self.
         # self.ui.groups_pages.setCurrentIndex(1)
 
+    def open_group_view_page(self, index):
+        row = index.row()
+        self.ui.groups_pages.setCurrentWidget(self.ui.group_view_page)
+        self.ui.group_name.setText(
+            f"Группа '{self.group_list_table_model.data(self.group_list_table_model.index(row, 1))}'")
+        if self.group_list_table_model.data(self.group_list_table_model.index(row, 5)): #false if str is null
+            pass #TODO тут типа функция отправляет запрос на создание VIEW где берет записи из SVOD по составному ключу из колонки последней. Ключи так выглядят 1:31B;12:32; и тд
+
+
+    def open_add_to_group_dialog(self):
+        selected_ids = self.get_selected_rows(self.ui.svod_table)
+
+        if not selected_ids:
+            QMessageBox.warning(self, "Предупреждение", "Выберите хотя бы одну строку для добавления.")
+            return
+
+        self.add_to_group_dialog = QDialog()
+        self.ui_add_to_group_dialog = Ui_add_to_group_dialog()
+        self.ui_add_to_group_dialog.setupUi(self.add_to_group_dialog)
+        self.ui_add_to_group_dialog.create_new_group_btn.clicked.connect(self.open_create_group_dialog)
+        self.ui_add_to_group_dialog.buttonBox.accepted.connect(self.create_group_list_record)
+        self.setup_group_cb()
+
+
+        self.add_to_group_dialog.setFixedSize(401, 249)
+        self.add_to_group_dialog.setModal(True)
+        self.add_to_group_dialog.show()
+
+    @staticmethod
+    def get_selected_rows(table: QTableView):
+        selection_model = table.selectionModel()
+        if not selection_model.hasSelection():
+            return []
+
+        selected_indexes = selection_model.selectedRows()
+        selected_ids = [index.data() for index in selected_indexes]
+        return selected_ids
+
+    def create_group_list_record(self):
+        selected_ids = self.get_selected_rows()
+
+        try:
+            # Получение выбранных записей из таблицы Svod
+            selected_records = self.session.query(SvodBase).filter(SvodBase.id.in_(selected_ids)).all()
+
+            # Уникальные регионы
+            unique_regions = ";".join(sorted(set(record.region for record in selected_records if record.region)))
+
+            # Уникальные GRNTI
+            grnti_values = set()
+            for record in selected_records:
+                if record.grnti:
+                    grnti_values.update(record.grnti.split(';'))
+            unique_grnti = ";".join(sorted(grnti_values))
+
+            # Количество записей
+            record_count = len(selected_records)
+
+            # Композитные ключи
+            records_composite_keys = ";".join(f"{record.codvuz}:{record.regnumber}" for record in selected_records if
+                                              record.codvuz and record.regnumber)
+
+            # Добавление записи в GroupList
+            new_record = GroupList(
+                unique_regions=unique_regions,
+                unique_grnti=unique_grnti,
+                record_count=record_count,
+                records_composite_keys=records_composite_keys
+            )
+
+            self.session.add(new_record)
+            self.session.commit()
+
+            QMessageBox.information(self, "Успех", "Данные успешно добавлены в GroupList.")
+        except Exception as e:
+            self.session.rollback()
+            QMessageBox.critical(self, "Ошибка", f"Произошла ошибка: {str(e)}")
+
+    def setup_group_cb(self):
+        font = QFont()
+        font.setPointSize(11)
+
+        self.ui_add_to_group_dialog.groups_list_cb = FilterComboBox(self.ui_add_to_group_dialog.widget)
+        self.ui_add_to_group_dialog.groups_list_cb.setObjectName(u"groups_list_cb")
+        self.ui_add_to_group_dialog.groups_list_cb.setFont(font)
+
+        self.ui_add_to_group_dialog.verticalLayout.addWidget(self.ui_add_to_group_dialog.groups_list_cb)
+
+        # self.ui.group_cb = SearchableComboBox(self.ui.layoutWidget)
+        # self.ui.group_cb.setObjectName(u"group_cb")
+        # self.ui.group_cb.setItemText(0, QCoreApplication.translate("MainWindow",
+        #                                                         u"+ \u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0433\u0440\u0443\u043f\u043f\u0443",
+        #                                                         None))
+        # self.ui.group_cb.setPlaceholderText(QCoreApplication.translate("MainWindow",
+        #                                                             u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c \u0432 \u0433\u0440\u0443\u043f\u043f\u0443",
+        #                                                             None))
+        # self.ui.crud_menu.addWidget(self.ui.group_cb)
+
+        # self.ui.group_cb.addItems(subj_list)
+        # self.ui.group_cb.setEditable(True)
 
     def top_scroll_func(self):
         self.ui.db_tables.currentWidget().children()[1].setVerticalScrollMode(
@@ -113,16 +212,16 @@ class ExponatDBMS(QMainWindow):
         self.ui.db_tables.currentWidget().children()[1].scrollToTop()
 
     def open_create_group_dialog(self):
-        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.create_group_dialog = QDialog()
         self.ui_create_group_dialog = Ui_create_group_dialog()
-        self.ui_create_group_dialog.setupUi(self.new_dialog)
+        self.ui_create_group_dialog.setupUi(self.create_group_dialog)
         self.ui_create_group_dialog.save_btn.clicked.connect(self.create_group)
 
         self.set_validation(Regex.common_regex, self.ui_create_group_dialog.group_name)
 
-        self.new_dialog.setFixedSize(310, 209)
-        self.new_dialog.setModal(True)
-        self.new_dialog.show()
+        self.create_group_dialog.setFixedSize(310, 209)
+        self.create_group_dialog.setModal(True)
+        self.create_group_dialog.show()
 
     def create_group(self):
         Data.close_connection()
@@ -152,10 +251,9 @@ class ExponatDBMS(QMainWindow):
                 else:
                     session.commit()
 
-            db_table_name = session.query(GroupListBase.db_table_name).where(GroupListBase.ui_table_name==name).scalar()
-            print(db_table_name)
-            print("db_table_name:", db_table_name, type(db_table_name))
-            create_dynamic_table(db_table_name)
+            ui_table_name = session.query(GroupListBase.ui_table_name).where(GroupListBase.ui_table_name==name).scalar()
+            print(ui_table_name)
+            print("ui_table_name:", ui_table_name, type(ui_table_name))
 
             Data.create_connection()
 
@@ -164,10 +262,15 @@ class ExponatDBMS(QMainWindow):
                 print("Ошибка добавления записи:", self.group_list_table_model.lastError().text())
             if self.group_list_table_model.select():
                 print("kaef")
-
             self.apply_filters()
-            self.new_dialog.close()
-#######################################__ДОБАВЛЕНИЕ ЗАПИСИ__###########################################################
+
+            if hasattr(self, "ui_add_to_group_dialog"):
+                self.ui_add_to_group_dialog.groups_list_cb.clear()
+                self.ui_add_to_group_dialog.groups_list_cb.add_items()
+            self.create_group_dialog.close()
+
+
+    #######################################__ДОБАВЛЕНИЕ ЗАПИСИ__###########################################################
     def validate_entry_fields(self):
         # Retrieve the input values
         vuz = self.ui_create_vyst_dialog.vuz.currentText()
@@ -333,7 +436,7 @@ class ExponatDBMS(QMainWindow):
         return error_found
 
     def open_create_vyst_dialog(self):
-        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.new_dialog = QDialog()
         self.ui_create_vyst_dialog = Ui_add_zapis_dialog()
         self.ui_create_vyst_dialog.setupUi(self.new_dialog)
         self.ui_create_vyst_dialog.save_btn.clicked.connect(self.create_vyst_entry)
@@ -524,7 +627,7 @@ class ExponatDBMS(QMainWindow):
             QMessageBox.warning(self, "Ошибка", "Нет активного виджета.")
 
     def open_update_vyst_dialog(self, model, selected_row):
-        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.new_dialog = QDialog()
         self.ui_create_vyst_dialog = Ui_add_zapis_dialog()
         self.ui_create_vyst_dialog.setupUi(self.new_dialog)
         self.ui_create_vyst_dialog.save_btn.clicked.connect(self.update_vyst_entry)
@@ -868,8 +971,6 @@ class ExponatDBMS(QMainWindow):
         self.confirm_dialog.close()
 
 
-        # Закрываем диалог
-
     def init_tables(self):
         # self.models = {
         #     "vyst_mo_table": self.create_model("vyst_mo"),
@@ -878,7 +979,7 @@ class ExponatDBMS(QMainWindow):
         # }
         self.vyst_mo_table_model = self.create_model("vyst_mo")
         self.vuz_table_model = self.create_model("vuz")
-        self.grntirub_table_model = self.create_model("grnti")
+        self.grntirub_table_model = self.create_model("grntirub")
         self.svod_table_model = self.create_model("svod")
         self.group_list_table_model = self.create_model("grouplist")
 
@@ -892,9 +993,11 @@ class ExponatDBMS(QMainWindow):
         # self.ui.svod_table.hideColumn(0)
         self.ui.svod_table.hideColumn(23)
         self.ui.vyst_mo_table.hideColumn(0)
-        self.ui.grntirub_table.hideColumn(0)
+        # self.ui.grntirub_table.hideColumn(0)
         # self.ui.vuz_table.hideColumn(0)
         self.ui.group_list_table.hideColumn(0)
+        self.ui.group_list_table.hideColumn(5)
+        self.ui.group_list_table.hideColumn(6)
 
         # Отключаем сортировку по заголовкам при первом выводе
         self.ui.vyst_mo_table.setSortingEnabled(False)
@@ -924,11 +1027,13 @@ class ExponatDBMS(QMainWindow):
                                                         "Федеральный округ", 'Город', "Статус", "Номер области",
                                                         "Область", "Категория", "Профиль"
                                                         ])
+        self.set_custom_headers(self.group_list_table_model, ["Имя группы", "Федеральные округа", "Рубрики ГРНТИ", "Количество выставок"])
 
         self.ui.vyst_mo_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.vuz_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.ui.group_list_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
@@ -968,7 +1073,6 @@ class ExponatDBMS(QMainWindow):
             header.setStretchLastSection(False)
             table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
 
-        # self.ui.vyst_mo_table.setColumnHidden(10, True)
         self.ui.vyst_mo_table.setEditTriggers(QAbstractItemView.EditTrigger.AllEditTriggers)
 
         while self.vyst_mo_table_model.canFetchMore():
@@ -977,6 +1081,14 @@ class ExponatDBMS(QMainWindow):
         while self.svod_table_model.canFetchMore():
             self.svod_table_model.fetchMore()
 
+        self.ui.group_list_table.doubleClicked.connect(self.open_group_view_page)
+
+
+    def open_group_list(self):
+        if self.ui.pages_.currentIndex() != 1:
+            self.ui.pages_.setCurrentIndex(1)
+
+        self.ui.groups_pages.setCurrentWidget(self.ui.group_list_page)
 
     def set_current_table(self, checked_action):
         """Switches the current table and resets the filters."""
@@ -986,7 +1098,6 @@ class ExponatDBMS(QMainWindow):
         if self.ui.pages_.currentIndex() != 0:
             self.ui.pages_.setCurrentIndex(0)
 
-        # Смена таблицы
         text = checked_action.text()
         if text == "ГРНТИ":
             self.ui.db_tables.setCurrentIndex(3)
@@ -995,9 +1106,8 @@ class ExponatDBMS(QMainWindow):
             self.top_scroll_func()
             self.ui.create_btn.setEnabled(False)
             self.ui.update_btn.setEnabled(False)
-            self.ui.group_cb.setEnabled(False)
+            self.ui.add_to_group_btn.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
-            # print(self.get_column_values(self.ui.grntirub_table, "Код рубрики"))
         elif text == "Выставки":
             self.ui.db_tables.setCurrentIndex(1)
             self.current_model = self.vyst_mo_table_model
@@ -1005,7 +1115,7 @@ class ExponatDBMS(QMainWindow):
             self.top_scroll_func()
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
-            self.ui.group_cb.setEnabled(False)
+            self.ui.add_to_group_btn.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
 
             self.ui.create_btn.clicked.disconnect()
@@ -1021,7 +1131,7 @@ class ExponatDBMS(QMainWindow):
             self.top_scroll_func()
             self.ui.create_btn.setEnabled(True)
             self.ui.update_btn.setEnabled(True)
-            self.ui.group_cb.setEnabled(False)
+            self.ui.add_to_group_btn.setEnabled(False)
             self.ui.delete_btn.setEnabled(True)
 
             self.ui.create_btn.clicked.disconnect()
@@ -1037,27 +1147,36 @@ class ExponatDBMS(QMainWindow):
             self.top_scroll_func()
             self.ui.create_btn.setEnabled(False)
             self.ui.update_btn.setEnabled(False)
-            self.ui.group_cb.setEnabled(True)
+            self.ui.add_to_group_btn.setEnabled(True)
             self.ui.delete_btn.setEnabled(False)
 
-            #TODO ATTENTION ТЫ ТЕСТИРОВАЛ НОЧЬЮ ФУНКЦИЮ GET_COLUMN_VALUES, ОНА РАБОТАЕТ, НО ПОЧЕМУ ТО 2 РАЗА ВЫВОДИЛА КОРОЧЕ РЕЗУЛЬТАТ,
-            #СКОРЕЕ ВСЕГО СВЯЗАНО С КНОПКОЙ МЕНЮ
-
-        # Обновление комбобокса с доступными колонками для фильтрации
         self.update_filter_combobox()
 
         # Показываем все строки при переключении таблиц
         self.show_all_rows()
 
-    def open_create_vuz_dialog(self):
-        with open('federal_obj.txt', 'r') as f:
-            subj_list = f.readlines()
-        with open('region_codes.txt', 'r') as f:
-            codes_list = f.readlines()
-        with open('federal_regions.txt', 'r') as f:
-            federal_regions = f.readlines()
+    @staticmethod
+    def read_txt_to_list(file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                lst = [line.strip() for line in file if line.strip()]
+            return lst
+        except FileNotFoundError:
+            print(f"Файл {file_path} не найден.")
+            return []
+        except Exception as e:
+            print(f"Произошла ошибка: {e}")
+            return []
 
-        self.new_dialog = PySide6.QtWidgets.QDialog()
+    def open_create_vuz_dialog(self):
+        subj_list = list(" ")
+        subj_list.extend(self.read_txt_to_list('data/federal_obj.txt'))
+        codes_list = list(" ")
+        codes_list.extend(self.read_txt_to_list('data/region_codes.txt'))
+        federal_regions = list(" ")
+        federal_regions.extend(self.read_txt_to_list('data/federal_regions.txt'))
+
+        self.new_dialog = QDialog()
         self.ui_create_vuz_dialog = Ui_create_vuz_dialog()
         self.ui_create_vuz_dialog.setupUi(self.new_dialog)
         self.ui_create_vuz_dialog.save_btn.clicked.connect(self.create_vuz)
@@ -1086,10 +1205,6 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_vuz_dialog.federal_subject_cb.setEditable(True)
         self.ui_create_vuz_dialog.federal_subject_code_cb.setEditable(True)
         self.ui_create_vuz_dialog.federal_region_cb.setEditable(False)
-        # self.ui_create_vuz_dialog.grnti.setValidator(QIntValidator(0, 99999999))
-        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
-
-        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.auto_insert_dots)
 
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_short_name)
         self.set_validation(Regex.num_regex, self.ui_create_vuz_dialog.vuz_code)
@@ -1101,20 +1216,6 @@ class ExponatDBMS(QMainWindow):
         self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_profile)
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.federal_subject_cb.lineEdit())
         self.set_validation(Regex.num_regex, self.ui_create_vuz_dialog.federal_subject_code_cb.lineEdit())
-
-        # Data.close_connection()
-        # with Session() as session:
-        # # Извлекаем все записи из таблицы Vuz
-        #     vuz_records = session.query(VuzBase).all()
-        # Data.create_connection()
-        # # Заполняем оба ComboBox
-        # for vuz in vuz_records:
-        #     self.ui_create_vuz_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
-        #     self.ui_create_vuz_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
-
-        # Заполняем ComboBox значениями
-        # vuz_list = [vuz.z1 for vuz in vuz_records]
-        # codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
 
         # Настройка комплитеров после заполнения ComboBox
         subject_name_completer = QCompleter(subj_list, self.ui_create_vuz_dialog.federal_subject_cb)
@@ -1136,9 +1237,6 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_vuz_dialog.federal_subject_code_cb.lineEdit().editingFinished.connect(
             lambda elem = self.ui_create_vuz_dialog.federal_subject_code_cb: self.validate_cb_input(elem)
         )
-        # self.ui_create_vuz_dialog.federal_region_cb.lineEdit().editingFinished.connect(
-        #     lambda elem=self.ui_create_vuz_dialog.federal_region_cb: self.validate_cb_input(elem)
-        # )
 
         self.new_dialog.setFixedSize(468, 573)
         self.new_dialog.setModal(True)
@@ -1149,7 +1247,7 @@ class ExponatDBMS(QMainWindow):
         codes_list = [w for w in Path("region_codes.txt").read_text(encoding="utf-8").replace("\n", " ").split()]
         federal_regions = [w for w in Path("federal_regions.txt").read_text(encoding="utf-8").replace("\n", " ").split()]
 
-        self.new_dialog = PySide6.QtWidgets.QDialog()
+        self.new_dialog = QDialog()
         self.ui_create_vuz_dialog = Ui_create_vuz_dialog()
         self.ui_create_vuz_dialog.setupUi(self.new_dialog)
         self.ui_create_vuz_dialog.save_btn.clicked.connect(self.update_vuz)
@@ -1178,10 +1276,6 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_vuz_dialog.federal_subject_cb.setEditable(True)
         self.ui_create_vuz_dialog.federal_subject_code_cb.setEditable(True)
         self.ui_create_vuz_dialog.federal_region_cb.setEditable(True)
-        # self.ui_create_vuz_dialog.grnti.setValidator(QIntValidator(0, 99999999))
-        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.validate_grnti_prefix)
-
-        # self.ui_create_vuz_dialog.grnti.textChanged.connect(self.auto_insert_dots)
 
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_short_name)
         self.set_validation(Regex.num_regex, self.ui_create_vuz_dialog.vuz_code)
@@ -1191,20 +1285,6 @@ class ExponatDBMS(QMainWindow):
         self.set_validation(Regex.rus_regex, self.ui_create_vuz_dialog.vuz_status)
         self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_category)
         self.set_validation(Regex.upper_rus_regex, self.ui_create_vuz_dialog.vuz_profile)
-
-        # Data.close_connection()
-        # with Session() as session:
-        # # Извлекаем все записи из таблицы Vuz
-        #     vuz_records = session.query(VuzBase).all()
-        # Data.create_connection()
-        # # Заполняем оба ComboBox
-        # for vuz in vuz_records:
-        #     self.ui_create_vuz_dialog.vuz.addItem(vuz.z1, str(vuz.codvuz))
-        #     self.ui_create_vuz_dialog.codvuz.addItem(str(vuz.codvuz), vuz.z1)
-
-        # Заполняем ComboBox значениями
-        # vuz_list = [vuz.z1 for vuz in vuz_records]
-        # codvuz_list = [str(vuz.codvuz) for vuz in vuz_records]
 
         # Настройка комплитеров после заполнения ComboBox
         subject_name_completer = QCompleter(subj_list, self.ui_create_vuz_dialog.federal_subject_cb)
@@ -1597,7 +1677,7 @@ class ExponatDBMS(QMainWindow):
             self.ui.add_filters_cb.addItems(headers)
 
     def set_custom_headers(self, model, headers):
-        if model is self.vuz_table_model or self.svod_table_model:
+        if model is self.vuz_table_model or model is self.svod_table_model:
             for index, header in enumerate(headers):
                 model.setHeaderData(index, Qt.Orientation.Horizontal, header)
         else:
@@ -1720,10 +1800,10 @@ class ExponatDBMS(QMainWindow):
         return f"Удалить строки с номерами {', '.join(formatted_numbers)}?"
 
     def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.Yes | QMessageBox.No,
-                                     QMessageBox.No)
+        reply = QMessageBox.question(self, 'Выход', "Вы уверены, что хотите выйти?", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No)
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.close_all_windows()
             event.accept()
         else:

@@ -31,7 +31,7 @@ class Ui_create_group_dialog(object):
         self.group_name.setFont(font)
         self.save_btn = QPushButton(create_group_dialog)
         self.save_btn.setObjectName(u"save_btn")
-        self.save_btn.setGeometry(QRect(20, 170, 81, 31))
+        self.save_btn.setGeometry(QRect(210, 170, 81, 31))
         self.label = QLabel(create_group_dialog)
         self.label.setObjectName(u"label")
         self.label.setGeometry(QRect(20, 80, 121, 31))

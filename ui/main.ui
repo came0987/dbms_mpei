@@ -70,15 +70,10 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="group_cb">
-           <property name="placeholderText">
-            <string>Добавить запись в группу</string>
+          <widget class="QPushButton" name="add_to_group_btn">
+           <property name="text">
+            <string>Добавить в группу</string>
            </property>
-           <item>
-            <property name="text">
-             <string>+ Создать новую группу</string>
-            </property>
-           </item>
           </widget>
          </item>
          <item>
@@ -346,23 +341,11 @@
            <rect>
             <x>10</x>
             <y>30</y>
-            <width>431</width>
+            <width>311</width>
             <height>51</height>
            </rect>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
-           <item>
-            <widget class="QPushButton" name="add_record_btn">
-             <property name="font">
-              <font>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-             <property name="text">
-              <string>Добавить запись</string>
-             </property>
-            </widget>
-           </item>
            <item>
             <widget class="QPushButton" name="delete_record_btn_2">
              <property name="font">
@@ -405,6 +388,24 @@
           </property>
           <property name="text">
            <string>Группа &lt;имя группы&gt;</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="back_to_group_list_page_btn">
+          <property name="geometry">
+           <rect>
+            <x>940</x>
+            <y>40</y>
+            <width>121</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>11</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Список групп</string>
           </property>
          </widget>
         </widget>
