@@ -4,12 +4,12 @@ from pathlib import Path
 from PySide6.QtGui import QFontMetrics, QIntValidator, QRegularExpressionValidator, QFont, QStandardItemModel
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
-                               QMessageBox, QDialog, QLineEdit, QHeaderView, QTableView)
+                               QMessageBox, QDialog, QLineEdit, QHeaderView, QTableView, QStyledItemDelegate)
 from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer, QRegularExpression, Qt, QCoreApplication
 from PySide6.QtSql import QSqlTableModel
-from sqlalchemy import tuple_, and_, or_
+from sqlalchemy import tuple_, and_, or_, text
 
-from connection import Session, Data
+from connection import Session, Data, engine
 from create_db import create_db_and_tables
 from py_ui.add_to_group_dialog import Ui_add_to_group_dialog
 from searchable_cb import SearchableComboBox, FilterComboBox
@@ -26,6 +26,13 @@ class Regex:
     num_regex = QRegularExpression(r"^\d+$")
     rus_regex = QRegularExpression(r"^[А-Яа-яЁё\s\.\;\"\']+$")
     upper_rus_regex = QRegularExpression(r"^[А-ЯЁ]+$")
+
+
+class SemicolonFormattingDelegate(QStyledItemDelegate):
+    def displayText(self, value, locale):
+        if isinstance(value, str):
+            return value.replace(";", "; ")
+        return super().displayText(value, locale)
 
 
 class ExponatDBMS(QMainWindow):
@@ -95,37 +102,76 @@ class ExponatDBMS(QMainWindow):
         self.ui.back_to_group_list_page_btn.clicked.connect(self.open_group_list)
         # self.ui.group_list_table.doubleClicked.connect(self.open_group_table)
 
-    # @Slot()
-    # def open_group_table(self, index):
-    #     row = index.row()
-    #     db_table_name = self.group_list_table_model.record(row).value("db_table_name")
-    #     ui_table_name = self.group_list_table_model.record(row).value("ui_table_name")
-
-        # self.ui.group_name.setText(ui_table_name)
-        # self.
-        # self.ui.groups_pages.setCurrentIndex(1)
 
     def open_group_view_page(self, index):
         row = index.row()
         self.ui.groups_pages.setCurrentWidget(self.ui.group_view_page)
         self.ui.group_name.setText(
-            f"Группа '{self.group_list_table_model.data(self.group_list_table_model.index(row, 1))}'")
+            f"Группа '{self.group_list_table_model.data(self.group_list_table_model.index(row, 0))}'")
         if self.group_list_table_model.data(self.group_list_table_model.index(row, 5)): #false if str is null
-            records_composite_keys = self.group_list_table_model.data(
-                self.group_list_table_model.index(row, 4))  # 4 - индекс столбца `records_composite_keys`
+            records_composite_keys = self.group_list_table_model.index(row, 5).data()
+            view_name = self.group_list_table_model.index(row, 4).data()
 
-            if records_composite_keys:
-                # Парсим составные ключи
-                composite_keys = [key.split(":") for key in records_composite_keys.split(";")]
-                filters = [and_(SvodBase.codvuz == int(key[0]), SvodBase.regnumber == key[1]) for key in composite_keys]
+            if not records_composite_keys or not view_name:
+                return
 
-                Data.close_connection()
-                with Session() as session:
-                    svod_records = session.query(SvodBase).filter(or_(*filters)).all()
-                Data.create_connection()
+            # Разделяем ключи и создаём представление
+            composite_keys = records_composite_keys.split(";")
+            self.create_view_from_composite_keys(view_name, composite_keys)
+            print(f"View {view_name} создано с записями для ключей: {composite_keys}")
 
-                # Создаем QSqlTableModel для отображения результата
-                self.show_svod_view(svod_records)
+            model = self.create_model(view_name)
+            self.ui.group_view_table.setModel(model)
+            self.set_custom_headers(model, ["Код ВУЗа", "Сокращенное наименование ВУЗа",
+                                                        "Наименование НИР", "Код  ГРНТИ", "Рубрика ГРНТИ", "Руководитель НИР",
+                                                        "Регистрационный номер НИР", "Признак  формы НИР", "Должность",
+                                                        "Ученое звание", "Ученая степень", "Признак",
+                                                        "Выставки", "Выставочный экспонат", "Название ВУЗа",
+                                                        "Полное наименование ВУЗа",
+                                                        "Федеральный округ", 'Город', "Статус", "Номер области",
+                                                        "Область", "Категория", "Профиль"
+                                                        ])
+            self.ui.group_view_table.horizontalHeader().sectionClicked.connect(
+                lambda index: self.handle_header_click(self.ui.group_view_table, index)
+            )
+            header = self.ui.group_view_table.horizontalHeader()
+
+            font_metrics = QFontMetrics(self.ui.group_view_table.font())
+
+            header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+            for col in range(header.count()):
+                header_text = self.ui.group_view_table.model().headerData(col, Qt.Orientation.Horizontal)
+                header_width = font_metrics.horizontalAdvance(header_text) + 20
+                self.ui.group_view_table.setColumnWidth(col, header_width)
+            header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+            header.setStretchLastSection(False)
+            self.ui.group_view_table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+
+    @staticmethod
+    def create_view_from_composite_keys(view_name, composite_keys):
+        """
+        Создаёт представление в базе данных на основе составных ключей.
+
+        :param view_name: Имя представления
+        :param composite_keys: Список составных ключей в формате ["codvuz:regnumber", ...]
+        """
+        conditions = []
+        for key in composite_keys:
+            codvuz, regnumber = key.split(":")
+            conditions.append(f"(codvuz = {codvuz} AND regnumber = '{regnumber}')")
+
+        condition_query = " OR ".join(conditions)
+        create_view_query = f"""
+            CREATE VIEW {view_name} AS
+            SELECT *
+            FROM svod
+            WHERE {condition_query};
+        """
+        Data.close_connection()
+        with engine.connect() as connection:
+            connection.execute(text(f"DROP VIEW IF EXISTS {view_name}"))  # Удаляем старое представление, если оно есть
+            connection.execute(text(create_view_query))
+        Data.create_connection()
 
     def open_add_to_group_dialog(self):
         selected_ids = self.get_selected_rows(self.ui.svod_table)
@@ -146,15 +192,6 @@ class ExponatDBMS(QMainWindow):
         self.add_to_group_dialog.setModal(True)
         self.add_to_group_dialog.show()
 
-    # @staticmethod
-    # def get_selected_rows(table: QTableView):
-    #     selection_model = table.selectionModel()
-    #     if not selection_model.hasSelection():
-    #         return []
-    #
-    #     selected_indexes = selection_model.selectedRows()
-    #     selected_ids = [index.data() for index in selected_indexes]
-    #     return selected_ids
 
     @staticmethod
     def get_selected_rows(table: QTableView):
@@ -178,24 +215,12 @@ class ExponatDBMS(QMainWindow):
         try:
             Data.close_connection()
             with Session() as session:
-                # Получение выбранных записей из таблицы Svod
-                # selected_records = session.query(SvodBase).filter(
-                #     tuple_(SvodBase.codvuz, SvodBase.regnumber).in_(selected_keys)
-                # ).all()
-                # selected_records = session.query(SvodBase).filter(
-                #     or_(
-                #         and_(SvodBase.codvuz == key[0], SvodBase.regnumber == key[1])
-                #         for key in selected_keys
-                #     )
-                # ).all()
                 conditions = [and_(SvodBase.codvuz == key[0], SvodBase.regnumber == key[1]) for key in selected_keys]
 
                 # Получение выбранных записей из таблицы Svod
                 selected_records = session.query(SvodBase).filter(or_(*conditions)).all()
             Data.create_connection()
 
-            # Уникальные регионы
-            # Уникальные регионы
             unique_regions = ";".join(sorted(set(record.region for record in selected_records if record.region)))
 
             # Уникальные GRNTI
@@ -251,18 +276,6 @@ class ExponatDBMS(QMainWindow):
 
         self.ui_add_to_group_dialog.verticalLayout.addWidget(self.ui_add_to_group_dialog.groups_list_cb)
 
-        # self.ui.group_cb = SearchableComboBox(self.ui.layoutWidget)
-        # self.ui.group_cb.setObjectName(u"group_cb")
-        # self.ui.group_cb.setItemText(0, QCoreApplication.translate("MainWindow",
-        #                                                         u"+ \u0421\u043e\u0437\u0434\u0430\u0442\u044c \u043d\u043e\u0432\u0443\u044e \u0433\u0440\u0443\u043f\u043f\u0443",
-        #                                                         None))
-        # self.ui.group_cb.setPlaceholderText(QCoreApplication.translate("MainWindow",
-        #                                                             u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c \u0432 \u0433\u0440\u0443\u043f\u043f\u0443",
-        #                                                             None))
-        # self.ui.crud_menu.addWidget(self.ui.group_cb)
-
-        # self.ui.group_cb.addItems(subj_list)
-        # self.ui.group_cb.setEditable(True)
 
     def top_scroll_func(self):
         self.ui.db_tables.currentWidget().children()[1].setVerticalScrollMode(
@@ -1087,7 +1100,7 @@ class ExponatDBMS(QMainWindow):
         # self.ui.vuz_table.hideColumn(0)
         # self.ui.group_list_table.hideColumn(0)
         self.ui.group_list_table.hideColumn(4)
-        # self.ui.group_list_table.hideColumn(6)
+        self.ui.group_list_table.hideColumn(5)
 
         # Отключаем сортировку по заголовкам при первом выводе
         self.ui.vyst_mo_table.setSortingEnabled(False)
@@ -1095,6 +1108,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.setSortingEnabled(False)
         self.ui.svod_table.setSortingEnabled(False)
         self.ui.group_list_table.setSortingEnabled(False)
+        self.ui.group_view_table.setSortingEnabled(False)
 
         # Настройка заголовков
         self.set_custom_headers(self.vyst_mo_table_model, ["Код ВУЗа",
@@ -1124,6 +1138,7 @@ class ExponatDBMS(QMainWindow):
         self.ui.grntirub_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.svod_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.ui.group_list_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.ui.group_view_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # Подключаем сортировку для каждой таблицы
         self.ui.vyst_mo_table.horizontalHeader().sectionClicked.connect(
@@ -1139,11 +1154,14 @@ class ExponatDBMS(QMainWindow):
             lambda index: self.handle_header_click(self.ui.svod_table, index)
         )
         self.ui.group_list_table.horizontalHeader().sectionClicked.connect(
-            lambda index: self.handle_header_click(self.ui.svod_table, index)
+            lambda index: self.handle_header_click(self.ui.group_list_table, index)
+        )
+        self.ui.group_view_table.horizontalHeader().sectionClicked.connect(
+            lambda index: self.handle_header_click(self.ui.group_view_table, index)
         )
 
         # Устанавливаем режим растягивания заголовков
-        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table, self.ui.group_list_table]:
+        for table in [self.ui.vyst_mo_table, self.ui.vuz_table, self.ui.grntirub_table, self.ui.svod_table, self.ui.group_list_table, self.ui.group_view_table]:
             #плавная прокрутка
             table.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
 
@@ -1154,10 +1172,24 @@ class ExponatDBMS(QMainWindow):
 
             header.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
 
-            for col in range(header.count()):
-                header_text = table.model().headerData(col, Qt.Orientation.Horizontal)
+            if table is self.ui.group_list_table:
+                table.setColumnWidth(0, 250)
+
+                header_text = table.model().headerData(1, Qt.Orientation.Horizontal)
                 header_width = font_metrics.horizontalAdvance(header_text) + 20
-                table.setColumnWidth(col, header_width)
+                table.setColumnWidth(1, header_width)
+
+                table.setColumnWidth(2, 620)
+
+                header_text = table.model().headerData(3, Qt.Orientation.Horizontal)
+                header_width = font_metrics.horizontalAdvance(header_text) + 20
+                table.setColumnWidth(3, header_width)
+
+            else:
+                for col in range(header.count()):
+                    header_text = table.model().headerData(col, Qt.Orientation.Horizontal)
+                    header_width = font_metrics.horizontalAdvance(header_text) + 20
+                    table.setColumnWidth(col, header_width)
 
             header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
             header.setStretchLastSection(False)
@@ -1172,6 +1204,11 @@ class ExponatDBMS(QMainWindow):
             self.svod_table_model.fetchMore()
 
         self.ui.group_list_table.doubleClicked.connect(self.open_group_view_page)
+
+        # columns_to_format = [1, 2]  # Индексы столбцов, в которых нужно форматировать данные
+        # for column in columns_to_format:
+        #     delegate = SemicolonFormattingDelegate()
+        #     self.ui.group_list_table.setItemDelegateForColumn(column, delegate)
 
 
     def open_group_list(self):
@@ -1767,12 +1804,12 @@ class ExponatDBMS(QMainWindow):
             self.ui.add_filters_cb.addItems(headers)
 
     def set_custom_headers(self, model, headers):
-        if model is self.vuz_table_model or model is self.svod_table_model or model is self.group_list_table_model:
-            for index, header in enumerate(headers):
-                model.setHeaderData(index, Qt.Orientation.Horizontal, header)
-        else:
+        if model is self.vyst_mo_table_model:
             for index, header in enumerate(headers):
                 model.setHeaderData(index + 1, Qt.Orientation.Horizontal, header)
+        else:
+            for index, header in enumerate(headers):
+                model.setHeaderData(index, Qt.Orientation.Horizontal, header)
 
     def clear_filter_input_fields(self):
         """Clears all filter input fields when switching tables."""

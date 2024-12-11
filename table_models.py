@@ -303,13 +303,12 @@ class GroupListBase(Base):
     unique_regions = Column(String)
     unique_grnti = Column(String)
     record_count = Column(Integer)
-    # db_view_name = Column(String, unique=True)
+    db_view_name = Column(String, unique=True)
     records_composite_keys = Column(String)
 
-# def generate_uuid(mapper, connection, target):
-#     target.db_table_name = f"table_{uuid.uuid4()}"
-#
-# # Привязываем событие к добавлению новой записи
-# event.listen(GroupListBase, 'before_insert', generate_uuid)
+def generate_uuid(mapper, connection, target):
+    target.db_view_name = f"table_{uuid.uuid4()}".replace('-', '')
+
+event.listen(GroupListBase, 'before_insert', generate_uuid)
 
 
