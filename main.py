@@ -192,6 +192,40 @@ class ExponatDBMS(QMainWindow):
 
         QMessageBox.information(self, "Успех", f"Отчет сохранен в {file_name[7:]}.")
 
+    # def delete_group_button_action_2(self):
+    #     current_table: QTableView = self.ui.group_list_table
+    #     self.open_delete_group_confirm_dialog_2(message)
+    #
+    def open_delete_group_confirm_dialog_2(self, row):
+        self.confirm_dialog = QDialog()
+        self.ui_confirm_dialog = Ui_Dialog()
+        self.ui_confirm_dialog.setupUi(self.confirm_dialog)
+        self.ui_confirm_dialog.label.setText("Удалить текущую группу?")
+
+    # Подключаем кнопку "OK" к функции delete_record
+        self.ui_confirm_dialog.buttonBox.accepted.connect(lambda: self.delete_group_record_2(row))
+
+    # Подключаем кнопку "Cancel" для закрытия диалога
+        self.ui_confirm_dialog.buttonBox.rejected.connect(self.confirm_dialog.close)
+        self.confirm_dialog.exec_()
+        self.confirm_dialog.setModal(True)
+
+
+    def delete_group_record_2(self, row):
+        current_table = self.ui.group_list_table
+
+        if isinstance(current_table, QTableView):
+            model = current_table.model()
+        #     selected_rows = current_table.selectionModel().selectedRows()
+
+            model.removeRow(row)
+
+        self.apply_filters()
+        self.update_all_tables(model)
+        self.ui.groups_pages.setCurrentWidget(self.ui.group_list_page)
+        QMessageBox.information(self, "Успех", f"Группа удалена!") #{self.group_list_table_model.data(self.group_list_table_model.index(row, 0))}
+        self.confirm_dialog.close()
+
     def open_group_view_page(self, index):
         row = index.row()
 
@@ -199,10 +233,11 @@ class ExponatDBMS(QMainWindow):
         print(self.group_list_table_model.data(self.group_list_table_model.index(row, 0)))
 
         self.ui.export_btn.clicked.disconnect()
+        self.ui.delete_group_btn_2.clicked.disconnect()
         self.ui.export_btn.clicked.connect(lambda: self.create_report(self.group_list_table_model.data(self.group_list_table_model.index(row, 0))))
-        # self.ui.group_view_table.horizontalHeader().sectionClicked.connect(
-        #     lambda index: self.handle_header_click(self.ui.group_view_table, index)
-        # )
+        self.ui.delete_group_btn_2.clicked.connect(lambda: self.open_delete_group_confirm_dialog_2(row))
+
+
 
         self.ui.groups_pages.setCurrentWidget(self.ui.group_view_page)
         self.ui.group_name.setText(
