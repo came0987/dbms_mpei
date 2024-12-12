@@ -1,12 +1,16 @@
+import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 from PySide6.QtGui import QFontMetrics, QIntValidator, QRegularExpressionValidator, QFont, QStandardItemModel
 from PySide6.QtWidgets import (QApplication, QMainWindow, QApplication, QComboBox, QPushButton,
                                QHBoxLayout, QLabel, QCompleter, QGridLayout, QAbstractItemView,
                                QMessageBox, QDialog, QLineEdit, QHeaderView, QTableView, QStyledItemDelegate)
 from PySide6.QtCore import QSortFilterProxyModel, QItemSelectionModel, QTimer, QRegularExpression, Qt, QCoreApplication
 from PySide6.QtSql import QSqlTableModel
+from openpyxl.workbook import Workbook
 from sqlalchemy import tuple_, and_, or_, text
 
 from connection import Session, Data, engine
@@ -28,9 +32,20 @@ class Regex:
     upper_rus_regex = QRegularExpression(r"^[А-ЯЁ]+$")
 
 
-class SemicolonFormattingDelegate(QStyledItemDelegate):
+# class SemicolonFormattingDelegate(QStyledItemDelegate):
+#     def displayText(self, value, locale):
+#         print(f"Formatting value: {value} (type: {type(value)})")
+#         if value is None:
+#             return ""
+#         if isinstance(value, str):
+#             return value.replace(";", "; ")
+#         return str(value)
+
+class SemicolonDelegate(QStyledItemDelegate):
     def displayText(self, value, locale):
+        # Проверяем, что значение является строкой
         if isinstance(value, str):
+            # Заменяем ";" на "; " (если "; " уже есть, ничего не изменится)
             return value.replace(";", "; ")
         return super().displayText(value, locale)
 
@@ -103,8 +118,92 @@ class ExponatDBMS(QMainWindow):
         # self.ui.group_list_table.doubleClicked.connect(self.open_group_table)
 
 
+    def create_report(self, group_name):
+        print(group_name)
+        print(type(group_name))
+        # Получение данных из GroupList
+        group_list_query = f"SELECT * FROM grouplist WHERE ui_table_name='{group_name}'"
+        group_list_df = pd.read_sql(group_list_query, engine)
+        print(group_list_df)
+        print(group_list_df.columns)
+
+        if group_list_df.empty:
+            print("Группа не найдена.")
+            return
+
+        group_info = group_list_df.iloc[0]
+        db_view_name = group_info['db_view_name']
+
+        # Получение данных из view
+        view_query = f"SELECT * FROM {db_view_name}"
+        view_df = pd.read_sql(view_query, engine)
+
+        reports_dir = "Отчеты"
+        if not os.path.exists(reports_dir):
+            os.makedirs(reports_dir)
+
+        # Создание Excel файла
+        # file_name = f"report_{group_name}.xlsx"
+        base_file_name = f"Отчет_{group_name}.xlsx"
+        file_name = os.path.join(reports_dir, base_file_name)
+        i = 1
+
+        # Проверка на существование файла и добавление числового суффикса
+        while os.path.exists(file_name):
+            file_name = os.path.join(reports_dir, f"Отчет_{group_name}({i}).xlsx")
+            i += 1
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Отчет"
+
+        # Заполнение данных в нужном формате
+        ws.append(["Дата:", datetime.now().strftime("%Y-%m-%d")])
+        ws.append([])
+
+        # Данные из GroupList в столбик
+        ws.append(["Название группы:", group_info['ui_table_name']])
+        ws.append(["Рубрики ГРНТИ:", group_info['unique_grnti']])
+        ws.append(["Регионы:", group_info['unique_regions']])
+        ws.append(["Количество выставок:", group_info['record_count']])
+        ws.append([])
+
+        # Заголовок для данных из view
+        ws.append([
+            "Код вуза", "Краткое название", "Тема",
+            "Имя руководителя", "Город", "Статус экспоната"
+        ])
+
+        # Добавление данных из view
+        for index, row in view_df.iterrows():
+            ws.append([
+                row['codvuz'], row['z2'], row['subject'],
+                row['bossname'], row['city'], row['exhitype']
+            ])
+
+        # Добавление подписей в столбик
+        ws.append([])
+        ws.append(["Дата"])
+        ws.append(["Подпись"])
+
+        # Сохранение файла
+        wb.save(file_name)
+        print(f"Отчет сохранен как {file_name}")
+
+        QMessageBox.information(self, "Успех", f"Отчет сохранен в {file_name[7:]}.")
+
     def open_group_view_page(self, index):
         row = index.row()
+
+        # ui_view_name = self.group_list_table_model.data(self.group_list_table_model.index(row, 4))
+        print(self.group_list_table_model.data(self.group_list_table_model.index(row, 0)))
+
+        self.ui.export_btn.clicked.disconnect()
+        self.ui.export_btn.clicked.connect(lambda: self.create_report(self.group_list_table_model.data(self.group_list_table_model.index(row, 0))))
+        # self.ui.group_view_table.horizontalHeader().sectionClicked.connect(
+        #     lambda index: self.handle_header_click(self.ui.group_view_table, index)
+        # )
+
         self.ui.groups_pages.setCurrentWidget(self.ui.group_view_page)
         self.ui.group_name.setText(
             f"Группа '{self.group_list_table_model.data(self.group_list_table_model.index(row, 0))}'")
@@ -254,7 +353,7 @@ class ExponatDBMS(QMainWindow):
             self.apply_filters()
             self.top_scroll_func()
 
-            QMessageBox.information(self, "Успех", "Данные успешно добавлены в GroupList.")
+            QMessageBox.information(self, "Успех", "Данные успешно добавлены в список Групп.")
 
 
         except Exception as e:
@@ -289,7 +388,7 @@ class ExponatDBMS(QMainWindow):
         self.ui_create_group_dialog.setupUi(self.create_group_dialog)
         self.ui_create_group_dialog.save_btn.clicked.connect(self.create_group)
 
-        self.set_validation(Regex.common_regex, self.ui_create_group_dialog.group_name)
+        # self.set_validation(Regex.common_regex, self.ui_create_group_dialog.group_name)
 
         self.create_group_dialog.setFixedSize(310, 209)
         self.create_group_dialog.setModal(True)
@@ -736,8 +835,9 @@ class ExponatDBMS(QMainWindow):
         )
 
         self.ui_create_vyst_dialog.exponat_name.textChanged.connect(
-            lambda: self.add_tooltip(self.ui_create_vyst_dialog.exponat_name)
+            lambda : self.add_tooltip(self.ui_create_vyst_dialog.exponat_name)
         )
+
         self.ui_create_vyst_dialog.exponat_name.editingFinished.connect(
             lambda: self.ui_create_vyst_dialog.exponat_name.setCursorPosition(0)
         )
@@ -1209,6 +1309,13 @@ class ExponatDBMS(QMainWindow):
         # for column in columns_to_format:
         #     delegate = SemicolonFormattingDelegate()
         #     self.ui.group_list_table.setItemDelegateForColumn(column, delegate)
+
+        delegate = SemicolonDelegate(self.ui.group_list_table)
+
+        # Устанавливаем делегат для нужных столбцов
+        column_with_semicolons = [1, 2]  # замените на номера ваших столбцов
+        for column in column_with_semicolons:
+            self.ui.group_list_table.setItemDelegateForColumn(column, delegate)
 
 
     def open_group_list(self):
