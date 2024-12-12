@@ -2,7 +2,7 @@ from PySide6 import QtSql, QtWidgets
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 
-engine = create_engine('sqlite:///database.db', pool_pre_ping=True)
+engine = create_engine('sqlite:///database/database.db', pool_pre_ping=True)
 Session = sessionmaker(bind=engine)
 metadata = MetaData()
 
@@ -14,7 +14,7 @@ class Data:
     def create_connection():
         if Data.db_connection is None:  # Создаем соединение, если оно еще не создано
             db = QtSql.QSqlDatabase.addDatabase('QSQLITE')
-            db.setDatabaseName('database.db')
+            db.setDatabaseName('database/database.db')
             if not db.open():
                 QtWidgets.QMessageBox.critical(None, "Cannot open database",
                                                "Click Cancel to exit.", QtWidgets.QMessageBox.Cancel)
